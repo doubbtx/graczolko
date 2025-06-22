@@ -126,8 +126,12 @@ io.on('connection', (socket) => {
         room.players[partnerId].wordSubmitter = socket.id;
         room.wordsToSubmit--;
 
+        // Broadcast the updated player list with the new word
+        io.to(data.roomId).emit('updatePlayers', room.players);
+
         socket.emit('wordSubmitted');
 
+        // Check if all players have submitted their words
         if (room.wordsToSubmit === 0) {
           room.gameState = 'playing';
           io.to(data.roomId).emit('allWordsSubmitted');
@@ -230,24 +234,8 @@ function nextTurn(roomId) {
     }
 
     room.currentTurn = nextPlayerId;
-    const guesser = room.players[room.currentTurn];
-
-    // Find the player who submitted the word for the current guesser
-    let submitterId = null;
-    for (const playerId in room.players) {
-        if (room.players[playerId].wordSubmitter === room.currentTurn) {
-            submitterId = playerId;
-            break;
-        }
-    }
-
     // Announce the turn change to everyone
     io.to(roomId).emit('turnChanged', { currentTurn: room.currentTurn });
-
-    // If we found the submitter, reveal the word to them
-    if (submitterId && guesser.currentWord) {
-        io.to(submitterId).emit('revealWord', { word: guesser.currentWord });
-    }
 
     // Set a timer for the new turn
     turnTimers[roomId] = setTimeout(() => {

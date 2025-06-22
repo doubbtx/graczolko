@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pl">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -119,52 +119,46 @@
 
             <!-- Home Screen -->
             <div id="home-screen">
-                <h2>Welcome!</h2>
-                <input type="text" id="player-name" placeholder="Enter your name">
-                <button id="create-room-btn">Create New Game</button>
+                <h2>Witaj!</h2>
+                <input type="text" id="player-name" placeholder="Wpisz swoje imię">
+                <button id="create-room-btn">Stwórz nową grę</button>
                 <hr style="margin: 20px 0; border-color: var(--card-bg);">
-                <input type="text" id="room-id-input" placeholder="Enter Game Code">
-                <button id="join-room-btn">Join Game</button>
+                <input type="text" id="room-id-input" placeholder="Wpisz kod pokoju">
+                <button id="join-room-btn">Dołącz do gry</button>
             </div>
 
             <!-- Lobby Screen -->
             <div id="lobby-screen" class="hidden">
-                <h2>Lobby</h2>
-                <p>Share this code with your friends:</p>
-                <h3 id="room-id-display" title="Click to copy"></h3>
-                <h3>Players:</h3>
+                <h2>Poczekalnia</h2>
+                <p>Podziel się kodem ze znajomymi:</p>
+                <h3 id="room-id-display" title="Kliknij, aby skopiować"></h3>
+                <h3>Gracze:</h3>
                 <ul id="players-list"></ul>
-                <button id="start-game-btn">Start Game</button>
+                <button id="start-game-btn">Rozpocznij grę</button>
             </div>
 
             <!-- Word Picking Screen -->
             <div id="picking-screen" class="hidden">
-                <h2>Time to Pick a Word!</h2>
-                <p>You are picking a word for: <strong id="partner-name"></strong></p>
+                <h2>Wybierz hasło!</h2>
+                <p>Wybierasz hasło dla: <strong id="partner-name"></strong></p>
                 <div id="word-choices"></div> <!-- Buttons will be injected here -->
-                <p id="picking-status" class="hidden">Word submitted! Waiting for other players...</p>
+                <p id="picking-status" class="hidden">Hasło wysłane! Oczekiwanie na resztę graczy...</p>
             </div>
 
             <!-- Game Screen -->
             <div id="game-screen" class="hidden">
                 <div class="game-grid">
                     <div>
-                        <h3>Players</h3>
+                        <h3>Gracze:</h3>
                         <ul id="game-players-list"></ul>
-                        <h3>Your Word:</h3>
-                        <p id="your-word"><strong>It's a secret!</strong></p>
-                        <div id="partner-word-container" class="hidden">
-                            <h3>Helping with:</h3>
-                            <p id="partner-word-display" style="color: var(--primary-accent); font-weight: bold;"></p>
-                        </div>
                     </div>
                     <div>
-                        <p>Current Turn: <strong id="current-turn-display"></strong></p>
+                        <p>Tura gracza: <strong id="current-turn-display"></strong></p>
                         <p id="timer-display">--</p>
                         <div id="game-controls">
-                            <input type="text" id="guess-input" placeholder="Guess the word!">
-                            <button id="make-guess-btn">Make Guess</button>
-                            <button id="skip-turn-btn" class="secondary">Skip Turn</button>
+                            <input type="text" id="guess-input" placeholder="Zgadnij hasło!">
+                            <button id="make-guess-btn">Zgaduj</button>
+                            <button id="skip-turn-btn" class="secondary">Pomiń turę</button>
                         </div>
                     </div>
                 </div>
@@ -172,11 +166,11 @@
 
              <!-- End Screen -->
             <div id="end-screen" class="hidden">
-                <h2>Game Over!</h2>
+                <h2>Koniec gry!</h2>
                 <p id="end-reason"></p>
-                <h3>Final Scores:</h3>
+                <h3>Wyniki końcowe:</h3>
                 <ul id="final-scores"></ul>
-                <button id="play-again-btn">Play Again</button>
+                <button id="play-again-btn">Zagraj ponownie</button>
             </div>
         </div>
     </div>
@@ -204,9 +198,6 @@
         const wordChoices = document.getElementById('word-choices');
         const pickingStatus = document.getElementById('picking-status');
         const gamePlayersList = document.getElementById('game-players-list');
-        const yourWordDisplay = document.getElementById('your-word');
-        const partnerWordContainer = document.getElementById('partner-word-container');
-        const partnerWordDisplay = document.getElementById('partner-word-display');
         const currentTurnDisplay = document.getElementById('current-turn-display');
         const timerDisplay = document.getElementById('timer-display');
         const gameControls = document.getElementById('game-controls');
@@ -233,7 +224,11 @@
             for (const id in players) {
                 const player = players[id];
                 const li = document.createElement('li');
-                li.textContent = `${player.name} (${player.score})`;
+                let content = `${player.name} (${player.score})`;
+                if (player.word) {
+                    content += `<br><small style="color: var(--primary-accent);">${player.word}</small>`;
+                }
+                li.innerHTML = content;
                 if (id === myPlayerId) li.style.fontWeight = 'bold';
                 listElement.appendChild(li);
             }
@@ -241,7 +236,7 @@
 
         const copyRoomId = () => {
             navigator.clipboard.writeText(roomIdDisplay.textContent).then(() => {
-                alert('Room code copied to clipboard!');
+                alert('Kod pokoju skopiowany!');
             });
         };
 
@@ -249,14 +244,14 @@
         createRoomBtn.addEventListener('click', () => {
             const name = playerNameInput.value.trim();
             if (name) socket.emit('createRoom', { playerName: name });
-            else alert('Please enter your name.');
+            else alert('Proszę podać imię.');
         });
 
         joinRoomBtn.addEventListener('click', () => {
             const name = playerNameInput.value.trim();
             const id = roomIdInput.value.trim().toUpperCase();
             if (name && id) socket.emit('joinRoom', { playerName: name, roomId: id });
-            else alert('Please enter your name and a game code.');
+            else alert('Proszę podać imię i kod pokoju.');
         });
 
         startGameBtn.addEventListener('click', () => socket.emit('startGame', roomId));
@@ -288,7 +283,7 @@
                 roomIdDisplay.textContent = roomId;
                 switchScreen('lobby');
             } else {
-                alert('Failed to join room. Check the code and try again.');
+                alert('Nie udało się dołączyć do pokoju. Sprawdź kod i spróbuj ponownie.');
             }
         });
 
@@ -327,12 +322,9 @@
             switchScreen('game');
         });
 
-        socket.on('turnChanged', (data) => {
+                socket.on('turnChanged', (data) => {
             const turnPlayer = players[data.currentTurn];
             currentTurnDisplay.textContent = turnPlayer.name;
-
-            // Hide the partner's word by default each turn
-            partnerWordContainer.classList.add('hidden');
 
             if (turnInterval) clearInterval(turnInterval);
             let timeLeft = 60;
@@ -350,15 +342,11 @@
             // The turn just changes, no specific log message needed now.
         });
 
-        socket.on('revealWord', (data) => {
-            partnerWordDisplay.textContent = data.word;
-            partnerWordContainer.classList.remove('hidden');
-        });
+        
 
         socket.on('guessMade', (data) => {
-            const result = data.isCorrect ? 'Correct!' : 'Incorrect.';
-            // Since the log is gone, we can use a simple alert for feedback.
-            alert(`${players[data.playerId].name} guessed: "${data.guess}" -> ${result}`);
+            const result = data.isCorrect ? 'Poprawnie!' : 'Niepoprawnie.';
+            alert(`${players[data.playerId].name} zgaduje: "${data.guess}" -> ${result}`);
         });
 
         socket.on('gameFinished', (data) => {
