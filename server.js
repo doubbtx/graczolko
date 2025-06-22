@@ -34,6 +34,11 @@ const rooms = {};
 
 app.use(express.static('public'));
 
+// Healthcheck endpoint for Railway
+app.get('/health', (req, res) => {
+  res.status(200).send('OK');
+});
+
 io.on('connection', (socket) => {
   console.log('New user connected');
 
