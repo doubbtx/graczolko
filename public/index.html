@@ -153,6 +153,10 @@
                         <ul id="game-players-list"></ul>
                         <h3>Your Word:</h3>
                         <p id="your-word"><strong>It's a secret!</strong></p>
+                        <div id="partner-word-container" class="hidden">
+                            <h3>Helping with:</h3>
+                            <p id="partner-word-display" style="color: var(--primary-accent); font-weight: bold;"></p>
+                        </div>
                     </div>
                     <div>
                         <p>Current Turn: <strong id="current-turn-display"></strong></p>
@@ -201,6 +205,8 @@
         const pickingStatus = document.getElementById('picking-status');
         const gamePlayersList = document.getElementById('game-players-list');
         const yourWordDisplay = document.getElementById('your-word');
+        const partnerWordContainer = document.getElementById('partner-word-container');
+        const partnerWordDisplay = document.getElementById('partner-word-display');
         const currentTurnDisplay = document.getElementById('current-turn-display');
         const timerDisplay = document.getElementById('timer-display');
         const gameControls = document.getElementById('game-controls');
@@ -325,6 +331,9 @@
             const turnPlayer = players[data.currentTurn];
             currentTurnDisplay.textContent = turnPlayer.name;
 
+            // Hide the partner's word by default each turn
+            partnerWordContainer.classList.add('hidden');
+
             if (turnInterval) clearInterval(turnInterval);
             let timeLeft = 60;
             timerDisplay.textContent = timeLeft;
@@ -339,6 +348,11 @@
 
         socket.on('turnSkipped', (data) => {
             // The turn just changes, no specific log message needed now.
+        });
+
+        socket.on('revealWord', (data) => {
+            partnerWordDisplay.textContent = data.word;
+            partnerWordContainer.classList.remove('hidden');
         });
 
         socket.on('guessMade', (data) => {

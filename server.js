@@ -197,41 +197,63 @@ function checkAnswer(word, question) {
 }
 
 function nextTurn(roomId) {
-  const room = rooms[roomId];
-  if (!room) return;
+    const room = rooms[roomId];
+    if (!room) return;
 
-  // Clear previous timer
-  if (turnTimers[roomId]) {
-    clearTimeout(turnTimers[roomId]);
-    delete turnTimers[roomId];
-  }
+    // Clear any existing timer for the previous turn
+    if (turnTimers[roomId]) {
+        clearTimeout(turnTimers[roomId]);
+        delete turnTimers[roomId];
+    }
 
-  // Find the next player who still has a word to guess
-  const activePlayers = room.turnOrder.filter(id => room.players[id] && room.players[id].currentWord);
-  
-  if (activePlayers.length === 0) {
-    return endGame(roomId, "All words have been guessed!");
-  }
+    // Find the next player who is still in the game
+    let currentIndex = room.turnOrder.indexOf(room.currentTurn);
+    let nextPlayerId = null;
 
-  const currentTurnIndex = room.turnOrder.indexOf(room.currentTurn);
-  let nextPlayerId = room.turnOrder[(currentTurnIndex + 1) % room.turnOrder.length];
+    for (let i = 1; i <= room.turnOrder.length; i++) {
+        let nextIndex = (currentIndex + i) % room.turnOrder.length;
+        let potentialNextPlayerId = room.turnOrder[nextIndex];
+        if (room.players[potentialNextPlayerId] && room.players[potentialNextPlayerId].currentWord) {
+            nextPlayerId = potentialNextPlayerId;
+            break;
+        }
+    }
 
-  // Find the next player in order who is still active
-  while(!activePlayers.includes(nextPlayerId)){
-      const nextIndex = room.turnOrder.indexOf(nextPlayerId);
-      nextPlayerId = room.turnOrder[(nextIndex + 1) % room.turnOrder.length];
-      // safety break for infinite loop
-      if (nextPlayerId === room.currentTurn) break;
-  }
+    // If all players have guessed, end the game
+    if (!nextPlayerId) {
+        io.to(roomId).emit('gameFinished', { 
+            reason: 'All players have guessed their words!',
+            players: room.players
+        });
+        delete rooms[roomId];
+        return;
+    }
 
-  room.currentTurn = nextPlayerId;
-  io.to(roomId).emit('turnChanged', { currentTurn: room.currentTurn });
+    room.currentTurn = nextPlayerId;
+    const guesser = room.players[room.currentTurn];
 
-  // Set a 60-second timer for the new turn
-  turnTimers[roomId] = setTimeout(() => {
-    io.to(roomId).emit('turnEnded', { playerId: room.currentTurn });
-    nextTurn(roomId);
-  }, 60000);
+    // Find the player who submitted the word for the current guesser
+    let submitterId = null;
+    for (const playerId in room.players) {
+        if (room.players[playerId].wordSubmitter === room.currentTurn) {
+            submitterId = playerId;
+            break;
+        }
+    }
+
+    // Announce the turn change to everyone
+    io.to(roomId).emit('turnChanged', { currentTurn: room.currentTurn });
+
+    // If we found the submitter, reveal the word to them
+    if (submitterId && guesser.currentWord) {
+        io.to(submitterId).emit('revealWord', { word: guesser.currentWord });
+    }
+
+    // Set a timer for the new turn
+    turnTimers[roomId] = setTimeout(() => {
+        io.to(roomId).emit('turnSkipped', { playerId: room.currentTurn });
+        nextTurn(roomId); // Automatically move to the next turn
+    }, 60000); // 60 seconds
 }
 
 function endGame(roomId, reason) {
