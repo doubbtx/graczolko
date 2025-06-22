@@ -1,286 +1,392 @@
 <!DOCTYPE html>
-<html lang="pl">
+<html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Czółko - Gra Online</title>
-  <script src="/socket.io/socket.io.js"></script>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      max-width: 800px;
-      margin: 0 auto;
-      padding: 20px;
-      background-color: #f5f5f5;
-    }
-    .screen {
-      display: none;
-      background: white;
-      padding: 20px;
-      border-radius: 8px;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-    }
-    .active {
-      display: block;
-    }
-    button {
-      background-color: #4CAF50;
-      color: white;
-      padding: 10px 15px;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-      margin: 5px;
-    }
-    button:hover {
-      background-color: #45a049;
-    }
-    #playersList {
-      margin: 15px 0;
-    }
-    #notes {
-      width: 100%;
-      height: 100px;
-      margin: 10px 0;
-    }
-    #questionLog {
-      height: 150px;
-      overflow-y: scroll;
-      border: 1px solid #ddd;
-      padding: 10px;
-      margin: 10px 0;
-    }
-    .your-turn {
-      background-color: #fffde7;
-      padding: 10px;
-      border-left: 4px solid #ffc107;
-      margin: 10px 0;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Czołko Deluxe</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-bg: #1a1a2e;
+            --secondary-bg: #16213e;
+            --card-bg: #0f3460;
+            --primary-accent: #e94560;
+            --text-color: #dcdcdc;
+            --text-muted: #a0a0a0;
+            --font-family: 'Poppins', sans-serif;
+        }
+        body {
+            font-family: var(--font-family);
+            background-color: var(--primary-bg);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        .container {
+            width: 100%;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        .card {
+            background-color: var(--secondary-bg);
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+            border: 1px solid var(--card-bg);
+        }
+        h1, h2, h3 {
+            color: white;
+            text-align: center;
+        }
+        h1 { font-size: 2.5rem; margin-bottom: 10px; color: var(--primary-accent); }
+        h2 { font-size: 2rem; margin-bottom: 20px; }
+        .hidden { display: none !important; }
+        input, button {
+            width: 100%;
+            padding: 15px;
+            margin: 8px 0;
+            border-radius: 8px;
+            border: 1px solid var(--card-bg);
+            background-color: var(--card-bg);
+            color: var(--text-color);
+            font-size: 1rem;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: var(--primary-accent);
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.3s, transform 0.1s;
+        }
+        button:hover { background-color: #ff637f; }
+        button:active { transform: scale(0.98); }
+        button.secondary {
+            background-color: var(--card-bg);
+        }
+        button.secondary:hover { background-color: #16213e; }
+        #players-list {
+            list-style: none;
+            padding: 0;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+        }
+        #players-list li {
+            background-color: var(--card-bg);
+            padding: 10px;
+            border-radius: 6px;
+            text-align: center;
+        }
+        #room-id-display {
+            background: var(--primary-bg);
+            padding: 10px;
+            border-radius: 6px;
+            font-weight: 600;
+            letter-spacing: 2px;
+            cursor: pointer;
+        }
+        .game-grid {
+            display: grid;
+            grid-template-columns: 1fr 3fr;
+            gap: 20px;
+        }
+        #game-log {
+            background: var(--primary-bg);
+            padding: 15px;
+            border-radius: 8px;
+            height: 300px;
+            overflow-y: auto;
+        }
+        #timer-display {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--primary-accent);
+        }
+    </style>
 </head>
 <body>
-  <div id="mainScreen" class="screen active">
-    <h1>Czółko</h1>
-    <div>
-      <h2>Stwórz nowy pokój</h2>
-      <select id="category">
-        <option value="polish">Polscy celebryci</option>
-        <option value="international">Międzynarodowi celebryci</option>
-        <option value="characters">Postacie z filmów/seriali</option>
-      </select>
-      <button id="createRoomBtn">Stwórz pokój</button>
+
+    <div class="container">
+        <div id="main-card" class="card">
+            <h1>Czołko Deluxe</h1>
+
+            <!-- Home Screen -->
+            <div id="home-screen">
+                <h2>Welcome!</h2>
+                <input type="text" id="player-name" placeholder="Enter your name">
+                <button id="create-room-btn">Create New Game</button>
+                <hr style="margin: 20px 0; border-color: var(--card-bg);">
+                <input type="text" id="room-id-input" placeholder="Enter Game Code">
+                <button id="join-room-btn">Join Game</button>
+            </div>
+
+            <!-- Lobby Screen -->
+            <div id="lobby-screen" class="hidden">
+                <h2>Lobby</h2>
+                <p>Share this code with your friends:</p>
+                <h3 id="room-id-display" title="Click to copy"></h3>
+                <h3>Players:</h3>
+                <ul id="players-list"></ul>
+                <button id="start-game-btn">Start Game</button>
+            </div>
+
+            <!-- Word Picking Screen -->
+            <div id="picking-screen" class="hidden">
+                <h2>Time to Pick Words!</h2>
+                <p>You are picking a word for: <strong id="partner-name"></strong></p>
+                <input type="text" id="word-input" placeholder="Enter a secret word...">
+                <button id="submit-word-btn">Submit Word</button>
+                <p id="picking-status" class="hidden">Word submitted! Waiting for other players...</p>
+            </div>
+
+            <!-- Game Screen -->
+            <div id="game-screen" class="hidden">
+                <div class="game-grid">
+                    <div>
+                        <h3>Players</h3>
+                        <ul id="game-players-list"></ul>
+                        <h3>Your Word:</h3>
+                        <p id="your-word"><strong>It's a secret!</strong></p>
+                    </div>
+                    <div>
+                        <p>Current Turn: <strong id="current-turn-display"></strong></p>
+                        <p id="timer-display">--</p>
+                        <div id="game-controls">
+                            <input type="text" id="question-input" placeholder="Ask a yes/no question...">
+                            <button id="ask-question-btn">Ask</button>
+                            <hr style="margin: 20px 0; border-color: var(--card-bg);">
+                            <input type="text" id="guess-input" placeholder="Guess the word!">
+                            <button id="make-guess-btn">Make Guess</button>
+                            <button id="skip-turn-btn" class="secondary">Skip Turn</button>
+                        </div>
+                        <h3>Game Log:</h3>
+                        <div id="game-log"></div>
+                    </div>
+                </div>
+            </div>
+
+             <!-- End Screen -->
+            <div id="end-screen" class="hidden">
+                <h2>Game Over!</h2>
+                <p id="end-reason"></p>
+                <h3>Final Scores:</h3>
+                <ul id="final-scores"></ul>
+                <button id="play-again-btn">Play Again</button>
+            </div>
+        </div>
     </div>
-    <div>
-      <h2>Dołącz do pokoju</h2>
-      <input type="text" id="playerName" placeholder="Twoje imię" required>
-      <input type="text" id="roomId" placeholder="Kod pokoju" required>
-      <button id="joinRoomBtn">Dołącz</button>
-    </div>
-  </div>
 
-  <div id="lobbyScreen" class="screen">
-    <h1>Pokój: <span id="roomCodeDisplay"></span></h1>
-    <h2>Gracze:</h2>
-    <div id="playersList"></div>
-    <button id="startGameBtn">Rozpocznij grę</button>
-    <button id="leaveLobbyBtn">Opuść pokój</button>
-  </div>
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
 
-  <div id="gameScreen" class="screen">
-    <h1>Twoja postać: <span id="yourWord"></span></h1>
-    <div id="turnIndicator" class="your-turn" style="display:none;">
-      Twoja tura! Zadaj pytanie tak/nie
-    </div>
-    
-    <div>
-      <input type="text" id="questionInput" placeholder="Zadaj pytanie tak/nie">
-      <button id="askQuestionBtn">Zadaj pytanie</button>
-      <button id="skipTurnBtn">Pomiń turę</button>
-    </div>
-    
-    <div>
-      <input type="text" id="guessInput" placeholder="Zgadnij kim jesteś">
-      <button id="makeGuessBtn">Zgaduję!</button>
-    </div>
-    
-    <h3>Notatki:</h3>
-    <textarea id="notes"></textarea>
-    
-    <h3>Historia pytań:</h3>
-    <div id="questionLog"></div>
-    
-    <button id="leaveGameBtn">Opuść grę</button>
-  </div>
+        // --- DOM Elements ---
+        const screens = {
+            home: document.getElementById('home-screen'),
+            lobby: document.getElementById('lobby-screen'),
+            picking: document.getElementById('picking-screen'),
+            game: document.getElementById('game-screen'),
+            end: document.getElementById('end-screen')
+        };
+        const playerNameInput = document.getElementById('player-name');
+        const createRoomBtn = document.getElementById('create-room-btn');
+        const roomIdInput = document.getElementById('room-id-input');
+        const joinRoomBtn = document.getElementById('join-room-btn');
+        const roomIdDisplay = document.getElementById('room-id-display');
+        const playersList = document.getElementById('players-list');
+        const startGameBtn = document.getElementById('start-game-btn');
+        const partnerName = document.getElementById('partner-name');
+        const wordInput = document.getElementById('word-input');
+        const submitWordBtn = document.getElementById('submit-word-btn');
+        const pickingStatus = document.getElementById('picking-status');
+        const gamePlayersList = document.getElementById('game-players-list');
+        const yourWordDisplay = document.getElementById('your-word');
+        const currentTurnDisplay = document.getElementById('current-turn-display');
+        const timerDisplay = document.getElementById('timer-display');
+        const gameControls = document.getElementById('game-controls');
+        const questionInput = document.getElementById('question-input');
+        const askQuestionBtn = document.getElementById('ask-question-btn');
+        const guessInput = document.getElementById('guess-input');
+        const makeGuessBtn = document.getElementById('make-guess-btn');
+        const skipTurnBtn = document.getElementById('skip-turn-btn');
+        const gameLog = document.getElementById('game-log');
+        const endReason = document.getElementById('end-reason');
+        const finalScores = document.getElementById('final-scores');
+        const playAgainBtn = document.getElementById('play-again-btn');
 
-  <script src="/socket.io/socket.io.js"></script>
-  <script>
-    const socket = io();
-    let currentRoomId = null;
-    let currentPlayerId = null;
-    let isMyTurn = false;
+        let roomId = null;
+        let myPlayerId = null;
+        let players = {};
+        let turnInterval = null;
 
-    // Elementy interfejsu
-    const screens = document.querySelectorAll('.screen');
-    const mainScreen = document.getElementById('mainScreen');
-    const lobbyScreen = document.getElementById('lobbyScreen');
-    const gameScreen = document.getElementById('gameScreen');
-    
-    // Przyciski
-    document.getElementById('createRoomBtn').addEventListener('click', () => {
-      const category = document.getElementById('category').value;
-      socket.emit('createRoom', { category });
-    });
-    
-    document.getElementById('joinRoomBtn').addEventListener('click', () => {
-      const playerName = document.getElementById('playerName').value;
-      const roomId = document.getElementById('roomId').value.toUpperCase();
-      
-      if (playerName && roomId) {
-        socket.emit('joinRoom', { playerName, roomId });
-      } else {
-        alert('Wprowadź imię i kod pokoju');
-      }
-    });
-    
-    document.getElementById('startGameBtn').addEventListener('click', () => {
-      socket.emit('startGame', currentRoomId);
-    });
-    
-    document.getElementById('leaveLobbyBtn').addEventListener('click', () => {
-      socket.emit('disconnect');
-      showScreen('mainScreen');
-    });
-    
-    document.getElementById('askQuestionBtn').addEventListener('click', () => {
-      const question = document.getElementById('questionInput').value;
-      if (question && isMyTurn) {
-        socket.emit('askQuestion', { roomId: currentRoomId, question });
-        document.getElementById('questionInput').value = '';
-      }
-    });
-    
-    document.getElementById('skipTurnBtn').addEventListener('click', () => {
-      if (isMyTurn) {
-        socket.emit('askQuestion', { roomId: currentRoomId, question: "skip" });
-      }
-    });
-    
-    document.getElementById('makeGuessBtn').addEventListener('click', () => {
-      const guess = document.getElementById('guessInput').value;
-      if (guess) {
-        socket.emit('makeGuess', { roomId: currentRoomId, guess });
-        document.getElementById('guessInput').value = '';
-      }
-    });
-    
-    document.getElementById('leaveGameBtn').addEventListener('click', () => {
-      socket.emit('disconnect');
-      showScreen('mainScreen');
-    });
-    
-    document.getElementById('notes').addEventListener('input', (e) => {
-      if (currentRoomId) {
-        socket.emit('updateNotes', { roomId: currentRoomId, notes: e.target.value });
-      }
-    });
+        // --- Functions ---
+        const switchScreen = (screenName) => {
+            Object.values(screens).forEach(s => s.classList.add('hidden'));
+            if (screens[screenName]) screens[screenName].classList.remove('hidden');
+        };
 
-    // Funkcje pomocnicze
-    function showScreen(screenId) {
-      screens.forEach(screen => {
-        screen.classList.remove('active');
-      });
-      document.getElementById(screenId).classList.add('active');
-    }
-    
-    function updatePlayersList(players) {
-      const playersList = document.getElementById('playersList');
-      playersList.innerHTML = '';
-      
-      Object.keys(players).forEach(playerId => {
-        const playerDiv = document.createElement('div');
-        playerDiv.textContent = `${players[playerId].name} (${players[playerId].score})`;
-        if (playerId === currentPlayerId) {
-          playerDiv.style.fontWeight = 'bold';
-        }
-        playersList.appendChild(playerDiv);
-      });
-    }
+        const updatePlayersList = (listElement) => {
+            listElement.innerHTML = '';
+            for (const id in players) {
+                const player = players[id];
+                const li = document.createElement('li');
+                li.textContent = `${player.name} (${player.score})`;
+                if (id === myPlayerId) li.style.fontWeight = 'bold';
+                listElement.appendChild(li);
+            }
+        };
 
-    // Obsługa zdarzeń Socket.io
-    socket.on('roomCreated', (data) => {
-      currentRoomId = data.roomId;
-      document.getElementById('roomCodeDisplay').textContent = data.roomId;
-      showScreen('lobbyScreen');
-    });
-    
-    socket.on('joinedRoom', (data) => {
-      if (data.success) {
-        currentPlayerId = socket.id;
-        showScreen('lobbyScreen');
-        document.getElementById('roomCodeDisplay').textContent = currentRoomId;
-      } else {
-        alert('Nie znaleziono pokoju o podanym kodzie');
-      }
-    });
-    
-    socket.on('updatePlayers', (players) => {
-      updatePlayersList(players);
-    });
-    
-    socket.on('gameStarted', (data) => {
-      document.getElementById('yourWord').textContent = data.yourWord;
-      showScreen('gameScreen');
-    });
-    
-    socket.on('turnChanged', (data) => {
-      isMyTurn = data.currentTurn === socket.id;
-      const turnIndicator = document.getElementById('turnIndicator');
-      
-      if (isMyTurn) {
-        turnIndicator.style.display = 'block';
-      } else {
-        turnIndicator.style.display = 'none';
-      }
-    });
-    
-    socket.on('questionAsked', (data) => {
-      const questionLog = document.getElementById('questionLog');
-      const entry = document.createElement('div');
-      
-      if (data.question === "skip") {
-        entry.textContent = `Gracz ${data.playerId === socket.id ? 'Ty' : data.playerId} pominął turę`;
-      } else {
-        entry.textContent = `Gracz ${data.playerId === socket.id ? 'Ty' : data.playerId} zapytał: "${data.question}" (Odpowiedź: ${data.answer ? 'TAK' : 'NIE'})`;
-      }
-      
-      questionLog.appendChild(entry);
-      questionLog.scrollTop = questionLog.scrollHeight;
-    });
-    
-    socket.on('guessMade', (data) => {
-      const questionLog = document.getElementById('questionLog');
-      const entry = document.createElement('div');
-      
-      if (data.isCorrect) {
-        entry.textContent = `Gracz ${data.playerId === socket.id ? 'Ty' : data.playerId} poprawnie odgadł: "${data.guess}"!`;
-        entry.style.color = 'green';
-      } else {
-        entry.textContent = `Gracz ${data.playerId === socket.id ? 'Ty' : data.playerId} zgaduje: "${data.guess}" (Błędnie)`;
-        entry.style.color = 'red';
-      }
-      
-      questionLog.appendChild(entry);
-      questionLog.scrollTop = questionLog.scrollHeight;
-    });
-    
-    socket.on('connect', () => {
-      console.log('Connected to server');
-    });
-    
-    socket.on('disconnect', () => {
-      console.log('Disconnected from server');
-      showScreen('mainScreen');
-    });
-  </script>
+        const addToLog = (message) => {
+            const p = document.createElement('p');
+            p.innerHTML = message;
+            gameLog.appendChild(p);
+            gameLog.scrollTop = gameLog.scrollHeight;
+        };
+
+        const copyRoomId = () => {
+            navigator.clipboard.writeText(roomIdDisplay.textContent).then(() => {
+                alert('Room code copied to clipboard!');
+            });
+        };
+
+        // --- Event Listeners ---
+        createRoomBtn.addEventListener('click', () => {
+            const name = playerNameInput.value.trim();
+            if (name) socket.emit('createRoom', { playerName: name });
+            else alert('Please enter your name.');
+        });
+
+        joinRoomBtn.addEventListener('click', () => {
+            const name = playerNameInput.value.trim();
+            const id = roomIdInput.value.trim().toUpperCase();
+            if (name && id) socket.emit('joinRoom', { playerName: name, roomId: id });
+            else alert('Please enter your name and a game code.');
+        });
+
+        startGameBtn.addEventListener('click', () => socket.emit('startGame', roomId));
+        submitWordBtn.addEventListener('click', () => {
+            const word = wordInput.value.trim();
+            if (word) socket.emit('submitWord', { roomId, word });
+            else alert('Please enter a word for your partner.');
+        });
+
+        askQuestionBtn.addEventListener('click', () => {
+            const question = questionInput.value.trim();
+            if (question) {
+                socket.emit('askQuestion', { roomId, question });
+                questionInput.value = '';
+            }
+        });
+
+        makeGuessBtn.addEventListener('click', () => {
+            const guess = guessInput.value.trim();
+            if (guess) {
+                socket.emit('makeGuess', { roomId, guess });
+                guessInput.value = '';
+            }
+        });
+
+        skipTurnBtn.addEventListener('click', () => socket.emit('skipTurn', roomId));
+        playAgainBtn.addEventListener('click', () => location.reload());
+        roomIdDisplay.addEventListener('click', copyRoomId);
+
+        // --- Socket.IO Handlers ---
+        socket.on('connect', () => { myPlayerId = socket.id; });
+
+        socket.on('roomCreated', (data) => {
+            roomId = data.roomId;
+            roomIdDisplay.textContent = roomId;
+            switchScreen('lobby');
+        });
+
+        socket.on('joinedRoom', (data) => {
+            if (data.success) {
+                roomId = data.roomId;
+                roomIdDisplay.textContent = roomId;
+                switchScreen('lobby');
+            } else {
+                alert('Failed to join room. Check the code and try again.');
+            }
+        });
+
+        socket.on('joinError', (data) => alert(data.message));
+        socket.on('gameError', (data) => alert(data.message));
+
+        socket.on('updatePlayers', (updatedPlayers) => {
+            players = updatedPlayers;
+            updatePlayersList(playersList);
+            updatePlayersList(gamePlayersList);
+        });
+
+        socket.on('pickingStarted', (data) => {
+            const myPartnerId = data.pairs[myPlayerId];
+            partnerName.textContent = players[myPartnerId].name;
+            switchScreen('picking');
+        });
+
+        socket.on('wordSubmitted', () => {
+            wordInput.classList.add('hidden');
+            submitWordBtn.classList.add('hidden');
+            pickingStatus.classList.remove('hidden');
+        });
+
+        socket.on('allWordsSubmitted', () => {
+            addToLog('All words have been submitted! The game begins.');
+            switchScreen('game');
+        });
+
+        socket.on('turnChanged', (data) => {
+            const turnPlayer = players[data.currentTurn];
+            currentTurnDisplay.textContent = turnPlayer.name;
+            addToLog(`It's now <strong>${turnPlayer.name}'s</strong> turn.`);
+
+            if (turnInterval) clearInterval(turnInterval);
+            let timeLeft = 60;
+            timerDisplay.textContent = timeLeft;
+            turnInterval = setInterval(() => {
+                timeLeft--;
+                timerDisplay.textContent = timeLeft;
+                if (timeLeft <= 0) clearInterval(turnInterval);
+            }, 1000);
+
+            gameControls.style.visibility = (data.currentTurn === myPlayerId) ? 'visible' : 'hidden';
+        });
+
+        socket.on('turnSkipped', (data) => {
+            addToLog(`<strong>${players[data.playerId].name}</strong> skipped their turn.`);
+        });
+
+        socket.on('questionAsked', (data) => {
+            const answer = data.answer ? 'Yes' : 'No';
+            addToLog(`<strong>${players[data.questioner].name}</strong> asked: "${data.question}" -> <strong>${answer}</strong>`);
+        });
+
+        socket.on('guessMade', (data) => {
+            const result = data.isCorrect ? 'Correct!' : 'Incorrect.';
+            addToLog(`<strong>${players[data.playerId].name}</strong> guessed: "${data.guess}" -> <strong>${result}</strong>`);
+        });
+
+        socket.on('gameFinished', (data) => {
+            if (turnInterval) clearInterval(turnInterval);
+            endReason.textContent = data.reason;
+            finalScores.innerHTML = '';
+            for(const id in data.players) {
+                const p = data.players[id];
+                const li = document.createElement('li');
+                li.textContent = `${p.name}: ${p.score}`;
+                finalScores.appendChild(li);
+            }
+            switchScreen('end');
+        });
+
+    </script>
 </body>
+</html>
 </html>
