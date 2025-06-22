@@ -225,8 +225,8 @@
                 const player = players[id];
                 const li = document.createElement('li');
                 let content = `${player.name} (${player.score})`;
-                if (player.word) {
-                    content += `<br><small style="color: var(--primary-accent);">${player.word}</small>`;
+                if (player.currentWord) {
+                    content += `<br><small style="color: var(--primary-accent);">${player.currentWord}</small>`;
                 }
                 li.innerHTML = content;
                 if (id === myPlayerId) li.style.fontWeight = 'bold';
