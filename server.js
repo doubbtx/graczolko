@@ -18,7 +18,9 @@ const words = require('./words.js');
 const allWords = [
     ...words.polishCelebrities, 
     ...words.worldCelebrities, 
-    ...words.tvAndMovieCharacters
+    ...words.tvAndMovieCharacters,
+    ...words.everydayItems,
+    ...words.gameItemsAndCharacters
 ];
 
 const rooms = {};
@@ -96,14 +98,14 @@ io.on('connection', (socket) => {
       room.wordsToSubmit = playerIds.length;
       room.turnOrder = shuffledPlayers;
 
-      // Send each player 3 unique word choices for their partner
+      // Send each player 5 unique word choices for their partner
       playerIds.forEach(playerId => {
         const partnerId = room.pairs[playerId];
         const partnerName = room.players[partnerId].name;
         
         const choices = [];
         const usedIndices = new Set();
-        while (choices.length < 3) {
+        while (choices.length < 5) {
             const randomIndex = Math.floor(Math.random() * allWords.length);
             if (!usedIndices.has(randomIndex)) {
                 choices.push(allWords[randomIndex]);

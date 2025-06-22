@@ -134,7 +134,7 @@
                 <h3 id="room-id-display" title="Kliknij, aby skopiować"></h3>
                 <h3>Gracze:</h3>
                 <ul id="players-list"></ul>
-                <button id="start-game-btn">Rozpocznij grę</button>
+                <button id="startGameBtn" style="display: none;">Zacznij Grę</button>
             </div>
 
             <!-- Word Picking Screen -->
@@ -193,7 +193,7 @@
         const joinRoomBtn = document.getElementById('join-room-btn');
         const roomIdDisplay = document.getElementById('room-id-display');
         const playersList = document.getElementById('players-list');
-        const startGameBtn = document.getElementById('start-game-btn');
+        const startGameBtn = document.getElementById('startGameBtn');
         const partnerName = document.getElementById('partner-name');
         const wordChoices = document.getElementById('word-choices');
         const pickingStatus = document.getElementById('picking-status');
@@ -226,7 +226,12 @@
                 const li = document.createElement('li');
                 let content = `${player.name} (${player.score})`;
                 if (player.currentWord) {
-                    content += `<br><small style="color: var(--primary-accent);">${player.currentWord}</small>`;
+                    // Only show the word if it's not the current player's own word
+                    if (id === myPlayerId) {
+                        content += `<br><small><em>(Twoje hasło)</em></small>`;
+                    } else {
+                        content += `<br><small style="color: var(--primary-accent);">${player.currentWord}</small>`;
+                    }
                 }
                 li.innerHTML = content;
                 if (id === myPlayerId) li.style.fontWeight = 'bold';
@@ -254,8 +259,10 @@
             else alert('Proszę podać imię i kod pokoju.');
         });
 
-        startGameBtn.addEventListener('click', () => socket.emit('startGame', roomId));
-        
+        startGameBtn.addEventListener('click', () => {
+            socket.emit('startGame', roomId);
+        });
+
         makeGuessBtn.addEventListener('click', () => {
             const guess = guessInput.value.trim();
             if (guess) {
@@ -292,6 +299,13 @@
 
         socket.on('updatePlayers', (updatedPlayers) => {
             players = updatedPlayers;
+            const playerIds = Object.keys(players);
+            // Show start button only to the first player (host)
+            if (playerIds.length > 0 && myPlayerId === playerIds[0]) {
+                startGameBtn.style.display = 'block';
+            } else {
+                startGameBtn.style.display = 'none';
+            }
             updatePlayersList(playersList);
             updatePlayersList(gamePlayersList);
         });
