@@ -1,41 +1,27 @@
 const express = require('express');
-const socketio = require('socket.io');
 const http = require('http');
+const socketIo = require('socket.io');
+const words = require('./words');
 
 const app = express();
 const server = http.createServer(app);
-const io = socketio(server, {
-  cors: {
-    origin: "*",
-    methods: ["GET", "POST"]
-  }
-});
+const io = socketIo(server);
 
 const PORT = process.env.PORT || 3000;
-
-// Baza słów
-const words = require('./words.js');
-const allWords = [
-    ...words.polishCelebrities, 
-    ...words.worldCelebrities, 
-    ...words.tvAndMovieCharacters,
-    ...words.everydayItems,
-    ...words.gameItemsAndCharacters
-];
-
-const rooms = {};
-let turnTimers = {};
 
 app.use(express.static('public'));
 
 app.get('/health', (req, res) => {
-  res.status(200).send('OK');
+    res.status(200).send('OK');
 });
 
-io.on('connection', (socket) => {
-  console.log('New user connected:', socket.id);
+const rooms = {};
+const turnTimers = {};
 
-  socket.on('createRoom', (data) => {
+io.on('connection', (socket) => {
+  console.log('User connected:', socket.id);
+
+  socket.on('createRoom', ({ playerName }) => {
     const roomId = generateRoomId();
     rooms[roomId] = {
       players: {},
@@ -44,37 +30,43 @@ io.on('connection', (socket) => {
       wordsToSubmit: 0,
       currentTurn: null,
       turnOrder: [],
+      turnCount: 0,
     };
     socket.join(roomId);
 
     rooms[roomId].players[socket.id] = {
-      name: data.playerName,
+      name: playerName,
       score: 0,
       currentWord: null,
-      wordSubmitter: null,
+      isReady: false
     };
 
     socket.emit('roomCreated', { roomId });
     io.to(roomId).emit('updatePlayers', rooms[roomId].players);
   });
 
-  socket.on('joinRoom', (data) => {
-    const room = rooms[data.roomId];
-    if (room) {
-      if (room.gameState !== 'waiting') {
-        return socket.emit('joinError', { message: 'Game has already started.' });
+  socket.on('joinRoom', ({ playerName, roomId }) => {
+    if (rooms[roomId]) {
+      if (Object.keys(rooms[roomId].players).length >= 10) {
+        socket.emit('joinError', { message: 'Pokój jest pełny.' });
+        return;
       }
-      socket.join(data.roomId);
-      room.players[socket.id] = {
-        name: data.playerName,
+      if (rooms[roomId].gameState !== 'waiting') {
+        socket.emit('joinError', { message: 'Gra już się rozpoczęła.' });
+        return;
+      }
+
+      socket.join(roomId);
+      rooms[roomId].players[socket.id] = {
+        name: playerName,
         score: 0,
         currentWord: null,
-        wordSubmitter: null,
+        isReady: false
       };
-      socket.emit('joinedRoom', { success: true, roomId: data.roomId });
-      io.to(data.roomId).emit('updatePlayers', room.players);
+      socket.emit('joinedRoom', { success: true, roomId });
+      io.to(roomId).emit('updatePlayers', rooms[roomId].players);
     } else {
-      socket.emit('joinError', { message: 'Room not found.' });
+      socket.emit('joinError', { message: 'Pokój nie istnieje.' });
     }
   });
 
@@ -82,107 +74,134 @@ io.on('connection', (socket) => {
     const room = rooms[roomId];
     if (!room) return;
     const playerIds = Object.keys(room.players);
+    if (playerIds.length < 2) {
+        socket.emit('gameError', { message: 'Potrzeba co najmniej 2 graczy, aby rozpocząć grę.' });
+        return;
+    }
 
-    if (playerIds.length >= 2) {
-      // Shuffle players for random pairing and turn order
-      const shuffledPlayers = [...playerIds].sort(() => 0.5 - Math.random());
-      
-      // Pair players in a circle: p1->p2, p2->p3, ..., pN->p1
-      for (let i = 0; i < shuffledPlayers.length; i++) {
-        const currentPlayer = shuffledPlayers[i];
-        const partner = shuffledPlayers[(i + 1) % shuffledPlayers.length];
-        room.pairs[currentPlayer] = partner;
-      }
+    room.gameState = 'picking';
+    room.turnOrder = playerIds.sort(() => Math.random() - 0.5);
+    
+    // Create pairs for word picking
+    for (let i = 0; i < room.turnOrder.length; i++) {
+        const pickerId = room.turnOrder[i];
+        const partnerId = room.turnOrder[(i + 1) % room.turnOrder.length];
+        room.pairs[pickerId] = partnerId;
+    }
 
-      room.gameState = 'picking';
-      room.wordsToSubmit = playerIds.length;
-      room.turnOrder = shuffledPlayers;
+    room.wordsToSubmit = playerIds.length;
 
-      // Send each player 5 unique word choices for their partner
-      playerIds.forEach(playerId => {
+    // Combine all word categories
+    const allWords = [
+        ...words.polishCelebrities,
+        ...words.worldCelebrities,
+        ...words.tvAndMovieCharacters,
+        ...words.everydayItems,
+        ...words.gameItemsAndCharacters
+    ];
+
+    // Send word choices to each player
+    playerIds.forEach(playerId => {
         const partnerId = room.pairs[playerId];
         const partnerName = room.players[partnerId].name;
         
-        const choices = [];
-        const usedIndices = new Set();
-        while (choices.length < 5) {
-            const randomIndex = Math.floor(Math.random() * allWords.length);
-            if (!usedIndices.has(randomIndex)) {
-                choices.push(allWords[randomIndex]);
-                usedIndices.add(randomIndex);
-            }
+        // Get 5 unique random words
+        const shuffled = [...allWords].sort(() => 0.5 - Math.random());
+        const wordChoices = shuffled.slice(0, 5);
+        
+        // We send the full word object to the client now
+        io.to(playerId).emit('pickingStarted', { 
+            partnerName: partnerName,
+            choices: wordChoices.map(w => w.word) // Only send the word string for selection
+        });
+    });
+  });
+
+  socket.on('submitWord', ({ roomId, word }) => {
+    const room = rooms[roomId];
+    if (!room || room.gameState !== 'picking') return;
+
+    const pickerId = socket.id;
+    const partnerId = room.pairs[pickerId];
+
+    // Find the full word object from the original list
+    const allWords = [
+        ...words.polishCelebrities,
+        ...words.worldCelebrities,
+        ...words.tvAndMovieCharacters,
+        ...words.everydayItems,
+        ...words.gameItemsAndCharacters
+    ];
+    const chosenWordObject = allWords.find(w => w.word === word);
+
+    if (chosenWordObject) {
+        room.players[partnerId].currentWord = chosenWordObject; // Store the full object
+        room.wordsToSubmit--;
+        socket.emit('wordSubmitted');
+
+        if (room.wordsToSubmit === 0) {
+            room.gameState = 'playing';
+            io.to(roomId).emit('allWordsSubmitted');
+            io.to(roomId).emit('updatePlayers', room.players); // Send words to all players
+            nextTurn(roomId);
         }
-        io.to(playerId).emit('pickingStarted', { partnerName, choices });
-      });
-    } else {
-        socket.emit('gameError', { message: 'Not enough players to start.' });
     }
   });
 
-  socket.on('submitWord', (data) => {
-    const room = rooms[data.roomId];
-    if (room && room.gameState === 'picking') {
-      const partnerId = room.pairs[socket.id];
-      if (partnerId && room.players[partnerId]) {
-        room.players[partnerId].currentWord = data.word;
-        room.players[partnerId].wordSubmitter = socket.id;
-        room.wordsToSubmit--;
+  socket.on('makeGuess', ({ roomId, guess }) => {
+    const room = rooms[roomId];
+    if (!room || room.currentTurn !== socket.id) return;
 
-        // Broadcast the updated player list with the new word
-        io.to(data.roomId).emit('updatePlayers', room.players);
+    const guesserId = socket.id;
+    const correctWord = room.players[guesserId].currentWord.word;
+    const isCorrect = guess.trim().toLowerCase() === correctWord.toLowerCase();
 
-        socket.emit('wordSubmitted');
-
-        // Check if all players have submitted their words
-        if (room.wordsToSubmit === 0) {
-          room.gameState = 'playing';
-          io.to(data.roomId).emit('allWordsSubmitted');
-          nextTurn(data.roomId);
-        }
-      }
+    if (isCorrect) {
+        room.players[guesserId].score++;
+        io.to(roomId).emit('updatePlayers', room.players);
+        io.to(roomId).emit('guessMade', { playerId: guesserId, guess, isCorrect });
+        nextTurn(roomId);
+    } else {
+        io.to(roomId).emit('guessMade', { playerId: guesserId, guess, isCorrect });
     }
   });
 
   socket.on('skipTurn', (roomId) => {
-    const room = rooms[roomId];
-    if (room && room.currentTurn === socket.id) {
+    if (rooms[roomId] && rooms[roomId].currentTurn === socket.id) {
         io.to(roomId).emit('turnSkipped', { playerId: socket.id });
         nextTurn(roomId);
     }
   });
 
-  socket.on('makeGuess', (data) => {
-    const room = rooms[data.roomId];
-    if (room && room.currentTurn === socket.id) {
-      const player = room.players[socket.id];
-      const isCorrect = data.guess.toLowerCase() === player.currentWord.toLowerCase();
-      
-      io.to(data.roomId).emit('guessMade', {
-        playerId: socket.id,
-        guess: data.guess,
-        isCorrect: isCorrect
-      });
-      
-      if (isCorrect) {
-        player.score += 1;
-        player.currentWord = null; // Word is guessed
-        io.to(data.roomId).emit('updatePlayers', room.players);
-        nextTurn(data.roomId);
-      }
+  socket.on('getHint', (roomId) => {
+    const room = rooms[roomId];
+    if (!room || room.turnCount < 10) return;
+
+    const currentPlayerId = room.currentTurn;
+    const currentWordObject = room.players[currentPlayerId]?.currentWord;
+
+    if (currentWordObject && currentWordObject.hint) {
+      const hint = currentWordObject.hint;
+      io.to(roomId).emit('hint', { hint });
     }
   });
 
   socket.on('disconnect', () => {
     console.log('User disconnected:', socket.id);
     for (const roomId in rooms) {
-      const room = rooms[roomId];
-      if (room.players[socket.id]) {
-        // If game is in progress, handle it
-        if (room.gameState !== 'waiting') {
-            endGame(roomId, `Player ${room.players[socket.id].name} disconnected.`);
+      if (rooms[roomId].players[socket.id]) {
+        delete rooms[roomId].players[socket.id];
+        if (Object.keys(rooms[roomId].players).length === 0) {
+          delete rooms[roomId];
+          if (turnTimers[roomId]) {
+            clearTimeout(turnTimers[roomId]);
+            delete turnTimers[roomId];
+          }
+          console.log(`Room ${roomId} deleted.`);
+        } else {
+          io.to(roomId).emit('updatePlayers', rooms[roomId].players);
         }
-        delete room.players[socket.id];
-        io.to(roomId).emit('updatePlayers', room.players);
+        break;
       }
     }
   });
@@ -192,19 +211,11 @@ function generateRoomId() {
   return Math.random().toString(36).substr(2, 6).toUpperCase();
 }
 
-function checkAnswer(word, question) {
-  const q = question.toLowerCase();
-  const w = word.toLowerCase();
-  if (q.includes("mężczyzna")) return w.includes("pan ") || !w.includes("pani ");
-  if (q.includes("kobieta")) return w.includes("pani ") || word.includes("a ");
-  if (q.includes("aktor")) return w.includes("aktor") || w.includes("aktorka");
-  if (q.includes("sportowiec")) return w.includes("piłkarz") || w.includes("tenisist");
-  return Math.random() > 0.5; // Fallback for simple answers
-}
-
 function nextTurn(roomId) {
     const room = rooms[roomId];
     if (!room) return;
+
+    room.turnCount++;
 
     // Clear any existing timer for the previous turn
     if (turnTimers[roomId]) {
@@ -212,53 +223,24 @@ function nextTurn(roomId) {
         delete turnTimers[roomId];
     }
 
-    // Find the next player who is still in the game
-    let currentIndex = room.turnOrder.indexOf(room.currentTurn);
-    let nextPlayerId = null;
-
-    for (let i = 1; i <= room.turnOrder.length; i++) {
-        let nextIndex = (currentIndex + i) % room.turnOrder.length;
-        let potentialNextPlayerId = room.turnOrder[nextIndex];
-        if (room.players[potentialNextPlayerId] && room.players[potentialNextPlayerId].currentWord) {
-            nextPlayerId = potentialNextPlayerId;
-            break;
-        }
-    }
-
-    // If all players have guessed, end the game
-    if (!nextPlayerId) {
-        io.to(roomId).emit('gameFinished', { 
-            reason: 'All players have guessed their words!',
-            players: room.players
-        });
-        delete rooms[roomId];
-        return;
-    }
+    const currentTurnIndex = room.turnOrder.indexOf(room.currentTurn);
+    const nextPlayerIndex = (currentTurnIndex + 1) % room.turnOrder.length;
+    const nextPlayerId = room.turnOrder[nextPlayerIndex];
 
     room.currentTurn = nextPlayerId;
     // Announce the turn change to everyone
-    io.to(roomId).emit('turnChanged', { currentTurn: room.currentTurn });
+    io.to(roomId).emit('turnChanged', { 
+        currentTurn: room.currentTurn,
+        turnCount: room.turnCount
+    });
 
     // Set a timer for the new turn
     turnTimers[roomId] = setTimeout(() => {
-        io.to(roomId).emit('turnSkipped', { playerId: room.currentTurn });
-        nextTurn(roomId); // Automatically move to the next turn
-    }, 60000); // 60 seconds
-}
-
-function endGame(roomId, reason) {
-    const room = rooms[roomId];
-    if (!room) return;
-
-    if (turnTimers[roomId]) {
-        clearTimeout(turnTimers[roomId]);
-        delete turnTimers[roomId];
-    }
-
-    room.gameState = 'finished';
-    io.to(roomId).emit('gameFinished', { reason: reason, players: room.players });
+        io.to(roomId).emit('turnEnded', { playerId: room.currentTurn });
+        nextTurn(roomId);
+    }, 45000); // 45 seconds
 }
 
 server.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+  console.log(`Server listening on port ${PORT}`);
 });
