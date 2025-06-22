@@ -235,6 +235,7 @@
         let roomId = null;
         let myPlayerId = null;
         let turnTimerInterval = null;
+        let players = {}; // Store player data locally
 
         const screens = {
             home: document.getElementById('home-screen'),
@@ -333,7 +334,8 @@
             alert(data.message);
         });
 
-        socket.on('updatePlayers', (players) => {
+        socket.on('updatePlayers', (updatedPlayers) => {
+            players = updatedPlayers; // Update local player state
             playerList.innerHTML = '';
             for (const id in players) {
                 const player = players[id];
@@ -343,17 +345,15 @@
                     li.style.fontWeight = 'bold';
                 }
                 playerList.appendChild(li);
-                
-                // Update my word display if it exists
-                if (id === myPlayerId && screens.game.classList.contains('active')) {
-                    currentWordDisplay.textContent = `Twoje słowo: ${player.currentWord ? player.currentWord.word : '???'}`;
-                }
             }
         });
 
         socket.on('pickingStarted', ({ partnerName, choices }) => {
             partnerNameSpan.textContent = partnerName;
             wordChoicesDiv.innerHTML = '';
+            wordChoicesDiv.style.display = 'block';
+            waitingForOthersP.style.display = 'none';
+
             choices.forEach(word => {
                 const button = document.createElement('button');
                 button.textContent = word;
@@ -377,21 +377,27 @@
 
         socket.on('turnChanged', ({ currentTurn, turnCount }) => {
             const isMyTurn = currentTurn === myPlayerId;
-            const turnPlayer = document.querySelector(`#player-list li:nth-child(${Object.keys(socket.io.engine.clients).indexOf(currentTurn) + 1})`);
-            const turnPlayerName = turnPlayer ? turnPlayer.textContent.split(' - ')[0] : 'Ktoś';
-            
-            turnInfoH2.textContent = `Tura gracza: ${turnPlayerName}`;
-            
+            const turnPlayer = players[currentTurn];
+            if (!turnPlayer) return;
+
+            const turnPlayerName = turnPlayer.name;
+
+            if (isMyTurn) {
+                turnInfoH2.textContent = "Twoja Tura!";
+                currentWordDisplay.textContent = 'Twoje słowo: ???';
+            } else {
+                turnInfoH2.textContent = `Tura gracza: ${turnPlayerName}`;
+                const wordToGuess = turnPlayer.currentWord ? turnPlayer.currentWord.word : '...';
+                currentWordDisplay.textContent = `Gracz ${turnPlayerName} zgaduje: ${wordToGuess}`;
+            }
+
             guessInput.disabled = !isMyTurn;
             guessBtn.disabled = !isMyTurn;
             skipBtn.disabled = !isMyTurn;
-            
-            if (isMyTurn) {
-                turnInfoH2.textContent = "Twoja Tura!";
-            }
-            
+            if(isMyTurn) guessInput.focus();
+
             hintBtn.style.display = turnCount >= 10 ? 'inline-block' : 'none';
-            hintDisplay.textContent = ''; // Clear previous hint
+            hintDisplay.textContent = '';
 
             startTimer(45);
         });
@@ -403,14 +409,35 @@
         });
 
         socket.on('guessMade', ({ playerId, guess, isCorrect }) => {
-            const guesserName = document.querySelector(`#player-list li:nth-child(${Object.keys(socket.io.engine.clients).indexOf(playerId) + 1})`).textContent.split(' - ')[0];
-            const message = isCorrect ? `${guesserName} zgadł(a) poprawnie!` : `${guesserName} zgaduje: "${guess}" - niepoprawnie.`;
-            // This could be displayed in a chat-like log in the future
-            console.log(message);
+            const guesserName = players[playerId] ? players[playerId].name : 'Ktoś';
+            const message = isCorrect
+                ? `${guesserName} zgadł(a) poprawnie!`
+                : `${guesserName} zgaduje: "${guess}" - niepoprawnie.`;
+            alert(message);
+        });
+
+        socket.on('turnSkipped', ({ playerId }) => {
+            const skipperName = players[playerId] ? players[playerId].name : 'Ktoś';
+            console.log(`${skipperName} pominął/pominęła turę.`);
         });
 
         socket.on('hint', ({ hint }) => {
             hintDisplay.textContent = `Podpowiedź: ${hint}`;
+        });
+
+        socket.on('gameFinished', (data) => {
+            if (turnTimerInterval) clearInterval(turnTimerInterval);
+            const endReason = document.getElementById('end-reason');
+            const finalScores = document.getElementById('final-scores');
+            endReason.textContent = data.reason;
+            finalScores.innerHTML = '';
+            for (const id in data.players) {
+                const p = data.players[id];
+                const li = document.createElement('li');
+                li.textContent = `${p.name}: ${p.score}`;
+                finalScores.appendChild(li);
+            }
+            switchScreen('end');
         });
 
         function startTimer(duration) {
