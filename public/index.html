@@ -139,10 +139,9 @@
 
             <!-- Word Picking Screen -->
             <div id="picking-screen" class="hidden">
-                <h2>Time to Pick Words!</h2>
+                <h2>Time to Pick a Word!</h2>
                 <p>You are picking a word for: <strong id="partner-name"></strong></p>
-                <input type="text" id="word-input" placeholder="Enter a secret word...">
-                <button id="submit-word-btn">Submit Word</button>
+                <div id="word-choices"></div> <!-- Buttons will be injected here -->
                 <p id="picking-status" class="hidden">Word submitted! Waiting for other players...</p>
             </div>
 
@@ -159,15 +158,10 @@
                         <p>Current Turn: <strong id="current-turn-display"></strong></p>
                         <p id="timer-display">--</p>
                         <div id="game-controls">
-                            <input type="text" id="question-input" placeholder="Ask a yes/no question...">
-                            <button id="ask-question-btn">Ask</button>
-                            <hr style="margin: 20px 0; border-color: var(--card-bg);">
                             <input type="text" id="guess-input" placeholder="Guess the word!">
                             <button id="make-guess-btn">Make Guess</button>
                             <button id="skip-turn-btn" class="secondary">Skip Turn</button>
                         </div>
-                        <h3>Game Log:</h3>
-                        <div id="game-log"></div>
                     </div>
                 </div>
             </div>
@@ -203,20 +197,16 @@
         const playersList = document.getElementById('players-list');
         const startGameBtn = document.getElementById('start-game-btn');
         const partnerName = document.getElementById('partner-name');
-        const wordInput = document.getElementById('word-input');
-        const submitWordBtn = document.getElementById('submit-word-btn');
+        const wordChoices = document.getElementById('word-choices');
         const pickingStatus = document.getElementById('picking-status');
         const gamePlayersList = document.getElementById('game-players-list');
         const yourWordDisplay = document.getElementById('your-word');
         const currentTurnDisplay = document.getElementById('current-turn-display');
         const timerDisplay = document.getElementById('timer-display');
         const gameControls = document.getElementById('game-controls');
-        const questionInput = document.getElementById('question-input');
-        const askQuestionBtn = document.getElementById('ask-question-btn');
         const guessInput = document.getElementById('guess-input');
         const makeGuessBtn = document.getElementById('make-guess-btn');
         const skipTurnBtn = document.getElementById('skip-turn-btn');
-        const gameLog = document.getElementById('game-log');
         const endReason = document.getElementById('end-reason');
         const finalScores = document.getElementById('final-scores');
         const playAgainBtn = document.getElementById('play-again-btn');
@@ -243,13 +233,6 @@
             }
         };
 
-        const addToLog = (message) => {
-            const p = document.createElement('p');
-            p.innerHTML = message;
-            gameLog.appendChild(p);
-            gameLog.scrollTop = gameLog.scrollHeight;
-        };
-
         const copyRoomId = () => {
             navigator.clipboard.writeText(roomIdDisplay.textContent).then(() => {
                 alert('Room code copied to clipboard!');
@@ -271,20 +254,7 @@
         });
 
         startGameBtn.addEventListener('click', () => socket.emit('startGame', roomId));
-        submitWordBtn.addEventListener('click', () => {
-            const word = wordInput.value.trim();
-            if (word) socket.emit('submitWord', { roomId, word });
-            else alert('Please enter a word for your partner.');
-        });
-
-        askQuestionBtn.addEventListener('click', () => {
-            const question = questionInput.value.trim();
-            if (question) {
-                socket.emit('askQuestion', { roomId, question });
-                questionInput.value = '';
-            }
-        });
-
+        
         makeGuessBtn.addEventListener('click', () => {
             const guess = guessInput.value.trim();
             if (guess) {
@@ -326,26 +296,34 @@
         });
 
         socket.on('pickingStarted', (data) => {
-            const myPartnerId = data.pairs[myPlayerId];
-            partnerName.textContent = players[myPartnerId].name;
+            partnerName.textContent = data.partnerName;
+            wordChoices.innerHTML = ''; // Clear previous choices
+            wordChoices.classList.remove('hidden');
+            pickingStatus.classList.add('hidden');
+
+            data.choices.forEach(word => {
+                const btn = document.createElement('button');
+                btn.textContent = word;
+                btn.addEventListener('click', () => {
+                    socket.emit('submitWord', { roomId, word });
+                });
+                wordChoices.appendChild(btn);
+            });
             switchScreen('picking');
         });
 
         socket.on('wordSubmitted', () => {
-            wordInput.classList.add('hidden');
-            submitWordBtn.classList.add('hidden');
+            wordChoices.classList.add('hidden');
             pickingStatus.classList.remove('hidden');
         });
 
         socket.on('allWordsSubmitted', () => {
-            addToLog('All words have been submitted! The game begins.');
             switchScreen('game');
         });
 
         socket.on('turnChanged', (data) => {
             const turnPlayer = players[data.currentTurn];
             currentTurnDisplay.textContent = turnPlayer.name;
-            addToLog(`It's now <strong>${turnPlayer.name}'s</strong> turn.`);
 
             if (turnInterval) clearInterval(turnInterval);
             let timeLeft = 60;
@@ -360,17 +338,13 @@
         });
 
         socket.on('turnSkipped', (data) => {
-            addToLog(`<strong>${players[data.playerId].name}</strong> skipped their turn.`);
-        });
-
-        socket.on('questionAsked', (data) => {
-            const answer = data.answer ? 'Yes' : 'No';
-            addToLog(`<strong>${players[data.questioner].name}</strong> asked: "${data.question}" -> <strong>${answer}</strong>`);
+            // The turn just changes, no specific log message needed now.
         });
 
         socket.on('guessMade', (data) => {
             const result = data.isCorrect ? 'Correct!' : 'Incorrect.';
-            addToLog(`<strong>${players[data.playerId].name}</strong> guessed: "${data.guess}" -> <strong>${result}</strong>`);
+            // Since the log is gone, we can use a simple alert for feedback.
+            alert(`${players[data.playerId].name} guessed: "${data.guess}" -> ${result}`);
         });
 
         socket.on('gameFinished', (data) => {

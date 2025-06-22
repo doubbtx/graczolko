@@ -14,21 +14,11 @@ const io = socketio(server, {
 const PORT = process.env.PORT || 3000;
 
 // Baza słów
+const words = require('./words.js');
 const allWords = [
-    // Polish
-    "Robert Lewandowski", "Kuba Wojewódzki", "Małgorzata Rozenek", "Adam Małysz", "Marta Żmuda Trzebiatowska", "Borys Szyc",
-    "Lech Wałęsa", "Jan Paweł II", "Mikołaj Kopernik", "Maria Skłodowska-Curie", "Fryderyk Chopin", "Andrzej Wajda",
-    "Roman Polański", "Krzysztof Kieślowski", "Wisława Szymborska", "Olga Tokarczuk", "Czesław Miłosz", "Iga Świątek",
-    // International
-    "Robert Downey Jr.", "Taylor Swift", "Leonardo DiCaprio", "Beyoncé", "Tom Hanks", "Angelina Jolie", "Albert Einstein",
-    "Marie Curie", "Nelson Mandela", "Mahatma Gandhi", "Martin Luther King Jr.", "Winston Churchill", "Queen Elizabeth II",
-    "Barack Obama", "Donald Trump", "Elon Musk", "Jeff Bezos", "Bill Gates", "Steve Jobs", "Mark Zuckerberg", "Dwayne Johnson",
-    "Cristiano Ronaldo", "Lionel Messi",
-    // Characters
-    "Walter White (Breaking Bad)", "Sheldon Cooper (The Big Bang Theory)", "Jon Snow (Game of Thrones)", "Hermione Granger (Harry Potter)",
-    "Tony Soprano (The Sopranos)", "Michael Scott (The Office)", "Harry Potter", "Darth Vader", "Luke Skywalker", "Indiana Jones",
-    "James Bond", "Sherlock Holmes", "Batman", "Superman", "Spider-Man", "Wonder Woman", "The Joker", "Gandalf", "Frodo Baggins",
-    "Katniss Everdeen (The Hunger Games)", "Forrest Gump", "Jack Sparrow (Pirates of the Caribbean)", "Rocky Balboa"
+    ...words.polishCelebrities, 
+    ...words.worldCelebrities, 
+    ...words.tvAndMovieCharacters
 ];
 
 const rooms = {};
@@ -55,13 +45,11 @@ io.on('connection', (socket) => {
     };
     socket.join(roomId);
 
-    // Add creator as the first player
     rooms[roomId].players[socket.id] = {
       name: data.playerName,
       score: 0,
       currentWord: null,
       wordSubmitter: null,
-      notes: ""
     };
 
     socket.emit('roomCreated', { roomId });
@@ -80,7 +68,6 @@ io.on('connection', (socket) => {
         score: 0,
         currentWord: null,
         wordSubmitter: null,
-        notes: ""
       };
       socket.emit('joinedRoom', { success: true, roomId: data.roomId });
       io.to(data.roomId).emit('updatePlayers', room.players);
@@ -91,25 +78,40 @@ io.on('connection', (socket) => {
 
   socket.on('startGame', (roomId) => {
     const room = rooms[roomId];
+    if (!room) return;
     const playerIds = Object.keys(room.players);
-    if (room && playerIds.length >= 2) {
-      // Pair players up
-      for (let i = 0; i < playerIds.length; i += 2) {
-        if (playerIds[i + 1]) {
-          room.pairs[playerIds[i]] = playerIds[i + 1];
-          room.pairs[playerIds[i + 1]] = playerIds[i];
-        } else {
-          // Odd player out, pair with the first player
-          room.pairs[playerIds[i]] = playerIds[0];
-          room.pairs[playerIds[0]] = playerIds[i];
-        }
+
+    if (playerIds.length >= 2) {
+      // Shuffle players for random pairing and turn order
+      const shuffledPlayers = [...playerIds].sort(() => 0.5 - Math.random());
+      
+      // Pair players in a circle: p1->p2, p2->p3, ..., pN->p1
+      for (let i = 0; i < shuffledPlayers.length; i++) {
+        const currentPlayer = shuffledPlayers[i];
+        const partner = shuffledPlayers[(i + 1) % shuffledPlayers.length];
+        room.pairs[currentPlayer] = partner;
       }
 
       room.gameState = 'picking';
       room.wordsToSubmit = playerIds.length;
-      room.turnOrder = playerIds;
+      room.turnOrder = shuffledPlayers;
 
-      io.to(roomId).emit('pickingStarted', { pairs: room.pairs });
+      // Send each player 3 unique word choices for their partner
+      playerIds.forEach(playerId => {
+        const partnerId = room.pairs[playerId];
+        const partnerName = room.players[partnerId].name;
+        
+        const choices = [];
+        const usedIndices = new Set();
+        while (choices.length < 3) {
+            const randomIndex = Math.floor(Math.random() * allWords.length);
+            if (!usedIndices.has(randomIndex)) {
+                choices.push(allWords[randomIndex]);
+                usedIndices.add(randomIndex);
+            }
+        }
+        io.to(playerId).emit('pickingStarted', { partnerName, choices });
+      });
     } else {
         socket.emit('gameError', { message: 'Not enough players to start.' });
     }
@@ -124,7 +126,6 @@ io.on('connection', (socket) => {
         room.players[partnerId].wordSubmitter = socket.id;
         room.wordsToSubmit--;
 
-        // Tell submitter their word was received
         socket.emit('wordSubmitted');
 
         if (room.wordsToSubmit === 0) {
@@ -141,20 +142,6 @@ io.on('connection', (socket) => {
     if (room && room.currentTurn === socket.id) {
         io.to(roomId).emit('turnSkipped', { playerId: socket.id });
         nextTurn(roomId);
-    }
-  });
-
-  socket.on('askQuestion', (data) => {
-    const room = rooms[data.roomId];
-    if (room && room.currentTurn === socket.id) {
-      const player = room.players[socket.id];
-      // The player who chose the word must answer.
-      const answerer = room.players[player.wordSubmitter];
-      io.to(data.roomId).emit('questionAsked', {
-        questioner: socket.id,
-        question: data.question,
-        answer: checkAnswer(player.currentWord, data.question)
-      });
     }
   });
 
