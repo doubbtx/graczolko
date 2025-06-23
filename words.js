@@ -15,7 +15,8 @@ module.exports = {
         { word: "Taco Hemingway", hint: "Polski raper" },
         { word: "Zbigniew Boniek", hint: "Były prezes PZPN" },
         { word: "Cezary Pazura", hint: "Polski aktor komediowy" },
-        { word: "Mariusz Pudzianowski", hint: "Najpierw dźwigał ciężary, potem rękawice" }
+        { word: "Mariusz Pudzianowski", hint: "Najpierw dźwigał ciężary, potem rękawice" },
+        { word: "Donald Trump", hint: "Pomarańczowy miliarder." },
     ],
     worldCelebrities: [
         { word: "Albert Einstein", hint: "Znany fizyk" },
@@ -34,7 +35,7 @@ module.exports = {
         { word: "Elon Musk", hint: "Jeden z najbogatszych ludzi na świecie" },
         { word: "Taylor Swift", hint: "Amerykańska piosenkarka" },
         { word: "Keanu Reeves", hint: "Aktor" },
-        { word: "Cersei Lannister", hint: "Uprawiałą seks z bratem" },
+        { word: "Cersei Lannister", hint: "Uprawiała seks z bratem" },
         { word: "Serena Williams", hint: "Tenis" },
         { word: "Ragnar Lothbrok", hint: "Napadł na Anglię i Francje" },
         { word: "Hulk", hint: "Promieniowanie gamma" },
@@ -59,7 +60,7 @@ module.exports = {
         { word: "Darth Vader", hint: "Zmienił strone" },
         { word: "Indiana Jones", hint: "Archeolog" },
         { word: "James Bond", hint: "Agent" },
-        { word: "Katniss Everdeen", hint: "Strzeliła i stała się symbolem"},
+        { word: "Katniss Everdeen", hint: "Strzeliła i stała się symbolem" },
         { word: "Sherlock Holmes", hint: "Detektyw" },
         { word: "Walter White", hint: "Chemik" },
         { word: "Voldemort", hint: "Nie ma nosa" },
@@ -95,7 +96,21 @@ module.exports = {
         { word: "Rick Sanchez", hint: "Nienawidzi swojego zięcia" },
         { word: "Morty Smith", hint: "On i jego dziadek są głównymi postaciami" },
         { word: "Frodo Baggins", hint: "Nosił pierścień." },
-        { word: "Shrek", hint: "Ma warstwy jak cebula." }
+        { word: "Shrek", hint: "Ma warstwy jak cebula." },
+        { word: "One Punch Man", hint: "Jest zbyt silny." },
+        { word: "Naruto", hint: "Nosi pomarańczowe ubranie." },
+        { word: "Luffy", hint: "Pirat." },
+        { word: "Yuji Itadori", hint: "Ma w sobie kogoś innego." },
+        { word: "Gon Freecs", hint: "Bardzo chciał znaleźć ojca." },
+        { word: "Violet Evergarden", hint: "Ma mechaniczne ręce, służyła w wojsku." },
+        { word: "Sansa Stark", hint: "Wilk w sukni." },
+        { word: "Arya Stark", hint: "Kobieta bez twarzy." },
+        { word: "Jamie Lannister", hint: "Jeden z najlepszych szermierzy, dopóki nie stracił ręki." },
+        { word: "Paul Atryda", hint: "Mesjasz, Imperator." },
+        { word: "Imperator Palpatine", hint: "Włada galaktyką i piorunami." },
+        { word: "Lord Farquaad", hint: "Ma kompleks wzrostu." },
+        { word: "Czkawka", hint: "Przyjaciel smoków." },
+        { word: "Robin Hood", hint: "Kradnie bogatym." },
     ],
     everydayItems: [
         { word: "Krzesło", hint: "Służy do siedzenia." }
@@ -114,5 +129,8 @@ module.exports = {
         { word: "Big Smoke", hint: "Postać z Grand Theft Auto" },
         { word: "Jinx", hint: "Wystrzałowa wariatka" },
         { word: "Vi", hint: "Ma metalowe rękawice." },
+        { word: "Jayce", hint: "Geniusz, miał młot jako broń." },
+        { word: "Ekko", hint: "Cofał czas do 4 sekund." },
+        { word: "Heimerdinger", hint: "Geniusz, bardzo niski, żył kilkaset lat." },
     ]
 };
