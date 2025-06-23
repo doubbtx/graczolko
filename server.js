@@ -39,7 +39,8 @@ io.on('connection', (socket) => {
       score: 0,
       currentWord: null,
       isReady: false,
-      hasGuessed: false
+      hasGuessed: false,
+      skipCount: 0
     };
 
     socket.emit('roomCreated', { roomId });
@@ -147,6 +148,7 @@ io.on('connection', (socket) => {
                     const player = room.players[playerId];
                     player.hasGuessed = false;
                     player.currentWord = null;
+                    player.skipCount = 0; // Reset skip count for the new round
                 }
                 io.to(roomId).emit('updatePlayers', room.players); // Send cleared state to sidebar
                 
@@ -161,10 +163,7 @@ io.on('connection', (socket) => {
   });
 
   socket.on('skipTurn', (roomId) => {
-    const room = rooms[roomId];
-    if (room && room.currentTurn === socket.id) {
-        room.players[socket.id].skipCount++;
-        io.to(roomId).emit('updatePlayers', room.players); // Notify clients of the new skip count
+    if (rooms[roomId] && rooms[roomId].currentTurn === socket.id) {
         io.to(roomId).emit('turnSkipped', { playerId: socket.id });
         nextTurn(roomId);
     }
@@ -172,9 +171,8 @@ io.on('connection', (socket) => {
 
   socket.on('getHint', (roomId) => {
     const room = rooms[roomId];
-    // Only the current player can request a hint, and only if they have skipped enough times.
-    const player = room?.players[socket.id];
-    if (!room || room.currentTurn !== socket.id || !player || player.skipCount < 15) return;
+    // Only the current player can request a hint for their own word.
+    if (!room || room.currentTurn !== socket.id || room.turnCount < 15) return;
 
     const currentPlayerId = room.currentTurn;
     const currentWordObject = room.players[currentPlayerId]?.currentWord;

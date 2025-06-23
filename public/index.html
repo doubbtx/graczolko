@@ -410,10 +410,7 @@
             skipBtn.disabled = !isMyTurn;
             hintBtn.disabled = !isMyTurn;
 
-            const myPlayerData = players[myPlayerId];
-            const isHintAvailable = isMyTurn && myPlayerData && myPlayerData.skipCount >= 15;
-            hintBtn.style.display = isHintAvailable ? 'inline-block' : 'none';
-            hintBtn.disabled = !isMyTurn;
+            hintBtn.style.display = turnCount >= 15 ? 'inline-block' : 'none';
             hintDisplay.textContent = '';
             startTimer(45);
         });
