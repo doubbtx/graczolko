@@ -23,12 +23,28 @@
             padding: 20px;
             display: flex;
             justify-content: center;
-            align-items: center;
+            align-items: flex-start;
             min-height: 100vh;
-            text-align: center;
         }
 
-        .container {
+        #player-sidebar {
+            width: 250px;
+            margin-right: 20px;
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 15px;
+            color: #fff;
+            height: calc(100vh - 40px);
+            overflow-y: auto;
+            flex-shrink: 0;
+        }
+
+        #player-sidebar h3 {
+            margin-top: 0;
+            border-bottom: 1px solid #fff;
+        }
+
+        #main-container {
             background-color: rgba(255, 255, 255, 0.1);
             padding: 30px;
             border-radius: 15px;
@@ -43,6 +59,7 @@
         h1, h2 {
             color: var(--accent-color);
             text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            text-align: center;
         }
 
         .screen {
@@ -54,7 +71,7 @@
         }
 
         input[type="text"] {
-            width: calc(100% - 20px);
+            width: calc(100% - 22px);
             padding: 10px;
             margin: 10px 0;
             border-radius: 5px;
@@ -88,7 +105,7 @@
             transform: none;
         }
 
-        #player-list, #word-choices {
+        #player-list {
             list-style: none;
             padding: 0;
             margin-top: 20px;
@@ -99,9 +116,6 @@
             padding: 10px;
             margin-bottom: 5px;
             border-radius: 5px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
         }
         
         .word-choice-btn {
@@ -114,16 +128,13 @@
         .word-choice-btn:hover {
             background-color: var(--primary-color);
         }
-
-        #game-info {
-            margin-bottom: 20px;
-        }
         
         #timer {
             font-size: 2em;
             font-weight: bold;
             color: var(--accent-color);
             margin: 15px 0;
+            text-align: center;
         }
 
         #current-word-display {
@@ -131,6 +142,7 @@
             font-weight: bold;
             margin: 15px 0;
             min-height: 30px;
+            text-align: center;
         }
         
         #hint-display {
@@ -140,20 +152,16 @@
             border-radius: 5px;
             min-height: 20px;
             font-style: italic;
+            text-align: center;
         }
 
-        .notes-section {
+        .notes-section, .controls-section {
             margin-top: 20px;
-        }
-
-        .notes-section label {
-            display: block;
-            margin-bottom: 5px;
-            font-weight: bold;
+            text-align: center;
         }
 
         .notes-section textarea {
-            width: calc(100% - 20px);
+            width: calc(100% - 22px);
             height: 80px;
             padding: 10px;
             border-radius: 5px;
@@ -163,48 +171,54 @@
             font-family: var(--font-family);
             resize: vertical;
         }
-
     </style>
 </head>
 <body>
-    <div class="container">
+    <div id="player-sidebar" style="display: none;">
+        <h3>Gracze</h3>
+        <div id="player-list-sidebar"></div>
+    </div>
+
+    <div id="main-container">
         <!-- Home Screen -->
         <div id="home-screen" class="screen active">
             <h1>Czołko Deluxe</h1>
-            <p>Nowoczesna gra w odgadywanie słów na czole!</p>
+            <p style="text-align: center;">Nowoczesna gra w odgadywanie słów na czole!</p>
             <input type="text" id="player-name" placeholder="Wpisz swoje imię">
-            <button id="create-room-btn">Stwórz Pokój</button>
-            <hr style="margin: 20px 0; border-color: var(--secondary-color);">
-            <input type="text" id="room-id-input" placeholder="Wpisz kod pokoju">
-            <button id="join-room-btn">Dołącz do Pokoju</button>
+            <div style="text-align: center;">
+                <button id="create-room-btn">Stwórz Pokój</button>
+                <hr style="margin: 20px 0; border-color: var(--secondary-color);">
+                <input type="text" id="room-id-input" placeholder="Wpisz kod pokoju">
+                <button id="join-room-btn">Dołącz do Pokoju</button>
+            </div>
         </div>
 
         <!-- Lobby Screen -->
         <div id="lobby-screen" class="screen">
             <h2>Lobby</h2>
-            <p>Kod pokoju: <strong id="room-id-display"></strong></p>
+            <p style="text-align: center;">Kod pokoju: <strong id="room-id-display"></strong></p>
             <h3>Gracze:</h3>
             <ul id="player-list"></ul>
-            <button id="start-game-btn">Start</button>
+            <div style="text-align: center;">
+                 <button id="start-game-btn">Start</button>
+            </div>
         </div>
 
         <!-- Word Picking Screen -->
         <div id="picking-screen" class="screen">
             <h2>Wybierz słowo dla <span id="partner-name"></span></h2>
-            <p>Wybierz jedno słowo, które będzie musiał(a) odgadnąć.</p>
+            <p style="text-align: center;">Wybierz jedno słowo, które będzie musiał(a) odgadnąć.</p>
             <div id="word-choices"></div>
-            <p id="waiting-for-others" style="display: none;">Słowo wybrane. Czekamy na resztę graczy...</p>
+            <p id="waiting-for-others" style="display: none; text-align: center;">Słowo wybrane. Czekamy na resztę graczy...</p>
         </div>
 
         <!-- Game Screen -->
         <div id="game-screen" class="screen">
-            <div id="game-info">
-                <h2 id="turn-info"></h2>
-                <div id="timer">00:45</div>
-            </div>
+            <h2 id="turn-info"></h2>
+            <div id="timer">00:45</div>
             <div id="current-word-display">Twoje słowo: ???</div>
             
-            <div id="controls">
+            <div class="controls-section">
                 <input type="text" id="guess-input" placeholder="Zgadnij swoje słowo">
                 <button id="guess-btn">Zgadnij</button>
                 <button id="skip-btn">Pomiń</button>
@@ -219,14 +233,12 @@
             </div>
         </div>
         
-        <!-- End Screen -->
-        <div id="end-screen" class="screen">
-            <h2>Koniec Gry!</h2>
-            <p id="end-reason"></p>
-            <h3>Wyniki:</h3>
-            <ul id="final-scores"></ul>
-            <button onclick="location.reload()">Zagraj Ponownie</button>
+        <!-- Round Over Screen -->
+        <div id="round-over-screen" class="screen">
+             <h2>Koniec rundy!</h2>
+             <p style="text-align: center;">Następna runda rozpocznie się za chwilę...</p>
         </div>
+
     </div>
 
     <script src="/socket.io/socket.io.js"></script>
@@ -235,22 +247,28 @@
         let roomId = null;
         let myPlayerId = null;
         let turnTimerInterval = null;
-        let players = {}; // Store player data locally
+        let players = {};
+        let gameState = 'waiting';
 
+        // Screen elements
         const screens = {
             home: document.getElementById('home-screen'),
             lobby: document.getElementById('lobby-screen'),
             picking: document.getElementById('picking-screen'),
             game: document.getElementById('game-screen'),
-            end: document.getElementById('end-screen')
+            roundOver: document.getElementById('round-over-screen')
         };
+        const mainContainer = document.getElementById('main-container');
+        const playerSidebar = document.getElementById('player-sidebar');
 
+        // UI elements
         const playerNameInput = document.getElementById('player-name');
         const createRoomBtn = document.getElementById('create-room-btn');
         const joinRoomBtn = document.getElementById('join-room-btn');
         const roomIdInput = document.getElementById('room-id-input');
         const roomIdDisplay = document.getElementById('room-id-display');
-        const playerList = document.getElementById('player-list');
+        const playerListLobby = document.getElementById('player-list');
+        const playerListSidebarDiv = document.getElementById('player-list-sidebar');
         const startGameBtn = document.getElementById('start-game-btn');
         const partnerNameSpan = document.getElementById('partner-name');
         const wordChoicesDiv = document.getElementById('word-choices');
@@ -266,32 +284,57 @@
 
         function switchScreen(screenName) {
             Object.values(screens).forEach(s => s.classList.remove('active'));
-            screens[screenName].classList.add('active');
+            if (screens[screenName]) {
+                screens[screenName].classList.add('active');
+            }
         }
 
+        function updatePlayerLists() {
+            playerListLobby.innerHTML = '';
+            playerListSidebarDiv.innerHTML = '';
+
+            const sortedPlayers = Object.values(players).sort((a, b) => b.score - a.score);
+
+            sortedPlayers.forEach(player => {
+                const id = Object.keys(players).find(key => players[key] === player);
+
+                // Update lobby list
+                const lobbyLi = document.createElement('li');
+                lobbyLi.textContent = `${player.name} - ${player.score} pkt.`;
+                if (id === myPlayerId) {
+                    lobbyLi.style.fontWeight = 'bold';
+                }
+                playerListLobby.appendChild(lobbyLi);
+
+                // Update sidebar list
+                const sidebarItem = document.createElement('div');
+                sidebarItem.classList.add('player-item');
+                let wordDisplay = '';
+                if (gameState === 'playing' && player.currentWord) {
+                    wordDisplay = (id === myPlayerId) ? 
+                        `<div class="word">Słowo: ???</div>` : 
+                        `<div class="word">Słowo: ${player.currentWord.word}</div>`;
+                }
+                sidebarItem.innerHTML = `<strong>${player.name}: ${player.score}</strong> ${player.hasGuessed ? '✅' : ''}${wordDisplay}`;
+                playerListSidebarDiv.appendChild(sidebarItem);
+            });
+        }
+
+        // Event Listeners
         createRoomBtn.addEventListener('click', () => {
             const playerName = playerNameInput.value.trim();
-            if (playerName) {
-                socket.emit('createRoom', { playerName });
-            } else {
-                alert('Proszę wpisać imię.');
-            }
+            if (playerName) socket.emit('createRoom', { playerName });
+            else alert('Proszę wpisać imię.');
         });
 
         joinRoomBtn.addEventListener('click', () => {
             const playerName = playerNameInput.value.trim();
             const roomIdToJoin = roomIdInput.value.trim().toUpperCase();
-            if (playerName && roomIdToJoin) {
-                socket.emit('joinRoom', { playerName, roomId: roomIdToJoin });
-            } else {
-                alert('Proszę wpisać imię i kod pokoju.');
-            }
+            if (playerName && roomIdToJoin) socket.emit('joinRoom', { playerName, roomId: roomIdToJoin });
+            else alert('Proszę wpisać imię i kod pokoju.');
         });
         
-        startGameBtn.addEventListener('click', () => {
-            socket.emit('startGame', roomId);
-        });
-
+        startGameBtn.addEventListener('click', () => socket.emit('startGame', roomId));
         guessBtn.addEventListener('click', () => {
             const guess = guessInput.value.trim();
             if (guess) {
@@ -299,25 +342,18 @@
                 guessInput.value = '';
             }
         });
+        skipBtn.addEventListener('click', () => socket.emit('skipTurn', roomId));
+        hintBtn.addEventListener('click', () => socket.emit('getHint', roomId));
 
-        skipBtn.addEventListener('click', () => {
-            socket.emit('skipTurn', roomId);
-        });
-
-        hintBtn.addEventListener('click', () => {
-            socket.emit('getHint', roomId);
-        });
-
-        socket.on('connect', () => {
-            myPlayerId = socket.id;
-        });
+        // Socket.IO Handlers
+        socket.on('connect', () => { myPlayerId = socket.id; });
 
         socket.on('roomCreated', (data) => {
             roomId = data.roomId;
             roomIdDisplay.textContent = roomId;
             switchScreen('lobby');
         });
-        
+
         socket.on('joinedRoom', (data) => {
             if (data.success) {
                 roomId = data.roomId;
@@ -326,133 +362,86 @@
             }
         });
 
-        socket.on('joinError', (data) => {
-            alert(data.message);
-        });
-        
-        socket.on('gameError', (data) => {
-            alert(data.message);
-        });
+        socket.on('joinError', (data) => alert(data.message));
+        socket.on('gameError', (data) => alert(data.message));
 
         socket.on('updatePlayers', (updatedPlayers) => {
-            players = updatedPlayers; // Update local player state
-            playerList.innerHTML = '';
-            for (const id in players) {
-                const player = players[id];
-                const li = document.createElement('li');
-                li.textContent = `${player.name} - ${player.score} pkt.`;
-                if (id === myPlayerId) {
-                    li.style.fontWeight = 'bold';
-                }
-                playerList.appendChild(li);
-            }
+            players = updatedPlayers;
+            updatePlayerLists();
         });
 
         socket.on('pickingStarted', ({ partnerName, choices }) => {
+            gameState = 'picking';
+            playerSidebar.style.display = 'block';
             partnerNameSpan.textContent = partnerName;
             wordChoicesDiv.innerHTML = '';
             wordChoicesDiv.style.display = 'block';
             waitingForOthersP.style.display = 'none';
 
             choices.forEach(word => {
-                const button = document.createElement('button');
-                button.textContent = word;
-                button.className = 'word-choice-btn';
-                button.onclick = () => {
+                const btn = document.createElement('button');
+                btn.textContent = word;
+                btn.className = 'word-choice-btn';
+                btn.onclick = () => {
                     socket.emit('submitWord', { roomId, word });
+                    wordChoicesDiv.style.display = 'none';
+                    waitingForOthersP.style.display = 'block';
                 };
-                wordChoicesDiv.appendChild(button);
+                wordChoicesDiv.appendChild(btn);
             });
             switchScreen('picking');
         });
 
-        socket.on('wordSubmitted', () => {
-            wordChoicesDiv.style.display = 'none';
-            waitingForOthersP.style.display = 'block';
-        });
-
         socket.on('allWordsSubmitted', () => {
+            gameState = 'playing';
             switchScreen('game');
         });
 
-        socket.on('turnChanged', ({ currentTurn, turnCount }) => {
+        socket.on('turnChanged', (data) => {
+            const { currentTurn, turnCount } = data;
+            const currentPlayer = players[currentTurn];
+            if (!currentPlayer) return;
+
+            turnInfoH2.textContent = `Tura gracza: ${currentPlayer.name}`;
+            
             const isMyTurn = currentTurn === myPlayerId;
-            const turnPlayer = players[currentTurn];
-            if (!turnPlayer) return;
-
-            const turnPlayerName = turnPlayer.name;
-
-            if (isMyTurn) {
-                turnInfoH2.textContent = "Twoja Tura!";
-                currentWordDisplay.textContent = 'Twoje słowo: ???';
-            } else {
-                turnInfoH2.textContent = `Tura gracza: ${turnPlayerName}`;
-                const wordToGuess = turnPlayer.currentWord ? turnPlayer.currentWord.word : '...';
-                currentWordDisplay.textContent = `Gracz ${turnPlayerName} zgaduje: ${wordToGuess}`;
-            }
-
             guessInput.disabled = !isMyTurn;
             guessBtn.disabled = !isMyTurn;
             skipBtn.disabled = !isMyTurn;
-            if(isMyTurn) guessInput.focus();
+            hintBtn.disabled = !isMyTurn;
 
-            hintBtn.style.display = turnCount >= 10 ? 'inline-block' : 'none';
+            hintBtn.style.display = turnCount >= 15 ? 'inline-block' : 'none';
             hintDisplay.textContent = '';
-
             startTimer(45);
         });
-        
-        socket.on('turnEnded', ({ playerId }) => {
-             if (playerId === myPlayerId) {
-                alert("Czas się skończył!");
-            }
+
+        socket.on('hint', ({ hint }) => { hintDisplay.textContent = `Wskazówka: ${hint}`; });
+
+        socket.on('roundFinished', () => {
+            gameState = 'finished';
+            switchScreen('roundOver');
         });
 
-        socket.on('guessMade', ({ playerId, guess, isCorrect }) => {
-            const guesserName = players[playerId] ? players[playerId].name : 'Ktoś';
-            const message = isCorrect
-                ? `${guesserName} zgadł(a) poprawnie!`
-                : `${guesserName} zgaduje: "${guess}" - niepoprawnie.`;
-            alert(message);
-        });
-
-        socket.on('turnSkipped', ({ playerId }) => {
-            const skipperName = players[playerId] ? players[playerId].name : 'Ktoś';
-            console.log(`${skipperName} pominął/pominęła turę.`);
-        });
-
-        socket.on('hint', ({ hint }) => {
-            hintDisplay.textContent = `Podpowiedź: ${hint}`;
-        });
-
-        socket.on('gameFinished', (data) => {
-            if (turnTimerInterval) clearInterval(turnTimerInterval);
-            const endReason = document.getElementById('end-reason');
-            const finalScores = document.getElementById('final-scores');
-            endReason.textContent = data.reason;
-            finalScores.innerHTML = '';
-            for (const id in data.players) {
-                const p = data.players[id];
-                const li = document.createElement('li');
-                li.textContent = `${p.name}: ${p.score}`;
-                finalScores.appendChild(li);
-            }
-            switchScreen('end');
+        socket.on('gameAborted', (reason) => {
+            alert(reason);
+            location.reload();
         });
 
         function startTimer(duration) {
             clearInterval(turnTimerInterval);
             let timer = duration;
-            turnTimerInterval = setInterval(() => {
-                const minutes = String(Math.floor(timer / 60)).padStart(2, '0');
-                const seconds = String(timer % 60).padStart(2, '0');
+            const update = () => {
+                const minutes = Math.floor(timer / 60).toString().padStart(2, '0');
+                const seconds = (timer % 60).toString().padStart(2, '0');
                 timerDisplay.textContent = `${minutes}:${seconds}`;
-                if (--timer < 0) {
-                    clearInterval(turnTimerInterval);
-                }
+            };
+            update();
+            turnTimerInterval = setInterval(() => {
+                timer--;
+                update();
+                if (timer <= 0) clearInterval(turnTimerInterval);
             }, 1000);
         }
-
     </script>
 </body>
 </html>
