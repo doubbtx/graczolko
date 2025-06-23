@@ -178,8 +178,8 @@ io.on('connection', (socket) => {
   socket.on('getHint', (roomId) => {
     const room = rooms[roomId];
     const player = room?.players[socket.id];
-    // Only the current player can request a hint for their own word, after 15 skips.
-    if (!room || !player || room.currentTurn !== socket.id || player.skipCount < 15) return;
+    // Only the current player can request a hint for their own word, after 12 skips.
+    if (!room || !player || room.currentTurn !== socket.id || player.skipCount < 12) return;
 
     const currentWordObject = player.currentWord;
 
@@ -267,6 +267,12 @@ function nextTurn(roomId) {
     const room = rooms[roomId];
     if (!room || room.gameState !== 'playing') return;
 
+    // Clear any existing timer
+    if (turnTimers[roomId]) {
+        clearTimeout(turnTimers[roomId]);
+        delete turnTimers[roomId];
+    }
+
     // Find players who haven't guessed yet
     const activePlayers = room.turnOrder.filter(id => room.players[id] && !room.players[id].hasGuessed);
     if (activePlayers.length === 0) {
@@ -276,14 +282,26 @@ function nextTurn(roomId) {
 
     room.turnCount++;
 
-    if (turnTimers[roomId]) {
-        clearTimeout(turnTimers[roomId]);
-        delete turnTimers[roomId];
+    // Find the index of the last player in the original turn order
+    const lastTurnIndex = room.currentTurn ? room.turnOrder.indexOf(room.currentTurn) : -1;
+    
+    let nextPlayerId = null;
+    // Search for the next active player in the turn order, starting from the player after the current one.
+    if (lastTurnIndex !== -1) {
+        for (let i = 1; i <= room.turnOrder.length; i++) {
+            const nextIndex = (lastTurnIndex + i) % room.turnOrder.length;
+            const potentialNextPlayerId = room.turnOrder[nextIndex];
+            if (activePlayers.includes(potentialNextPlayerId)) {
+                nextPlayerId = potentialNextPlayerId;
+                break;
+            }
+        }
     }
 
-    const currentTurnIndex = room.currentTurn ? activePlayers.indexOf(room.currentTurn) : -1;
-    const nextPlayerIndex = (currentTurnIndex + 1) % activePlayers.length;
-    const nextPlayerId = activePlayers[nextPlayerIndex];
+    // If no player had a turn yet, or if the last player left, pick the first active one.
+    if (!nextPlayerId) {
+        nextPlayerId = activePlayers[0];
+    }
 
     room.currentTurn = nextPlayerId;
     io.to(roomId).emit('turnChanged', { 

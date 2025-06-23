@@ -249,6 +249,7 @@
         let turnTimerInterval = null;
         let players = {};
         let gameState = 'waiting';
+        let currentTurn = null;
 
         // Screen elements
         const screens = {
@@ -365,6 +366,11 @@
         socket.on('joinError', (data) => alert(data.message));
         socket.on('gameError', (data) => alert(data.message));
 
+        socket.on('hint', ({ hint }) => {
+            hintDisplay.textContent = `Podpowiedź: ${hint}`;
+            hintDisplay.style.display = 'block';
+        });
+
         socket.on('updatePlayers', (updatedPlayers) => {
             players = updatedPlayers;
             updatePlayerLists();
@@ -398,27 +404,49 @@
         });
 
         socket.on('turnChanged', (data) => {
-            const { currentTurn, turnCount } = data;
-            const currentPlayer = players[currentTurn];
-            if (!currentPlayer) return;
+            currentTurn = data.currentTurn; // Keep track of whose turn it is
+            const isMyTurn = data.currentTurn === myPlayerId;
+            const currentPlayer = players[data.currentTurn];
+            const me = players[myPlayerId];
+
+            if (!currentPlayer || !me) return;
 
             turnInfoH2.textContent = `Tura gracza: ${currentPlayer.name}`;
-            
-            const isMyTurn = currentTurn === myPlayerId;
-            guessInput.disabled = !isMyTurn;
+
+            // Display the word for the current player (or hide it if it's me)
+            if (isMyTurn) {
+                currentWordDisplay.textContent = 'Twoje słowo: ???';
+            } else if (currentPlayer.currentWord) {
+                currentWordDisplay.textContent = `Słowo gracza ${currentPlayer.name}: ${currentPlayer.currentWord.word}`;
+            } else {
+                currentWordDisplay.textContent = ''; // Clear if no word
+            }
+
+            // Enable/disable controls
             guessBtn.disabled = !isMyTurn;
             skipBtn.disabled = !isMyTurn;
-            hintBtn.disabled = !isMyTurn;
+            guessInput.disabled = !isMyTurn;
+            if (isMyTurn) {
+                guessInput.focus();
+            }
 
-            hintBtn.style.display = turnCount >= 15 ? 'inline-block' : 'none';
+            // Show hint button if conditions are met
+            if (isMyTurn && me.skipCount >= 15) {
+                hintBtn.style.display = 'inline-block';
+            } else {
+                hintBtn.style.display = 'none';
+            }
+            
+            // Reset hint text display
             hintDisplay.textContent = '';
+            hintDisplay.style.display = 'none';
+
             startTimer(45);
         });
 
-        socket.on('hint', ({ hint }) => { hintDisplay.textContent = `Wskazówka: ${hint}`; });
-
         socket.on('roundFinished', () => {
             gameState = 'finished';
+            if (turnTimerInterval) clearInterval(turnTimerInterval);
             switchScreen('roundOver');
         });
 
