@@ -115,42 +115,6 @@
             background-color: var(--primary-color);
         }
 
-        .game-layout {
-            display: grid;
-            grid-template-columns: 200px 1fr;
-            gap: 20px;
-            width: 100%;
-            max-width: 900px;
-        }
-
-        #game-sidebar {
-            background-color: rgba(0,0,0,0.2);
-            padding: 15px;
-            border-radius: 10px;
-        }
-
-        #game-sidebar h3 {
-            margin-top: 0;
-            color: var(--accent-color);
-        }
-
-        #sidebar-player-list {
-            list-style: none;
-            padding: 0;
-        }
-
-        #sidebar-player-list li {
-            margin-bottom: 10px;
-            font-size: 0.9em;
-        }
-
-        #sidebar-player-list .player-word {
-            font-style: italic;
-            color: #fdd835;
-            display: block;
-            margin-top: 4px;
-        }
-
         #game-info {
             margin-bottom: 20px;
         }
@@ -234,32 +198,24 @@
 
         <!-- Game Screen -->
         <div id="game-screen" class="screen">
-            <div class="game-layout">
-                <div id="game-sidebar">
-                    <h3>Gracze i Hasła</h3>
-                    <ul id="sidebar-player-list"></ul>
-                </div>
-                <div id="game-main">
-                    <div id="game-info">
-                        <h2 id="turn-info"></h2>
-                        <div id="timer">00:45</div>
-                    </div>
-                    <div id="current-word-display">Twoje słowo: ???</div>
-                    
-                    <div id="controls">
-                        <input type="text" id="guess-input" placeholder="Zgadnij swoje słowo">
-                        <button id="guess-btn">Zgadnij</button>
-                        <button id="skip-btn">Pomiń</button>
-                        <button id="hint-btn" style="display: none;">Podpowiedź</button>
-                    </div>
-                    
-                    <div id="hint-display"></div>
+            <div id="game-info">
+                <h2 id="turn-info"></h2>
+                <div id="timer">00:45</div>
+            </div>
+            <div id="current-word-display">Twoje słowo: ???</div>
+            
+            <div id="controls">
+                <input type="text" id="guess-input" placeholder="Zgadnij swoje słowo">
+                <button id="guess-btn">Zgadnij</button>
+                <button id="skip-btn">Pomiń</button>
+                <button id="hint-btn" style="display: none;">Podpowiedź</button>
+            </div>
+            
+            <div id="hint-display"></div>
 
-                    <div class="notes-section">
-                        <label for="personal-notes">Twoje Notatki (widoczne tylko dla Ciebie)</label>
-                        <textarea id="personal-notes"></textarea>
-                    </div>
-                </div>
+            <div class="notes-section">
+                <label for="personal-notes">Twoje Notatki (widoczne tylko dla Ciebie)</label>
+                <textarea id="personal-notes"></textarea>
             </div>
         </div>
         
@@ -295,7 +251,6 @@
         const roomIdInput = document.getElementById('room-id-input');
         const roomIdDisplay = document.getElementById('room-id-display');
         const playerList = document.getElementById('player-list');
-        const sidebarPlayerList = document.getElementById('sidebar-player-list');
         const startGameBtn = document.getElementById('start-game-btn');
         const partnerNameSpan = document.getElementById('partner-name');
         const wordChoicesDiv = document.getElementById('word-choices');
@@ -381,8 +336,6 @@
 
         socket.on('updatePlayers', (updatedPlayers) => {
             players = updatedPlayers; // Update local player state
-            
-            // Update lobby list
             playerList.innerHTML = '';
             for (const id in players) {
                 const player = players[id];
@@ -392,23 +345,6 @@
                     li.style.fontWeight = 'bold';
                 }
                 playerList.appendChild(li);
-            }
-
-            // Update game sidebar list
-            sidebarPlayerList.innerHTML = '';
-            for (const id in players) {
-                const player = players[id];
-                const li = document.createElement('li');
-                let wordInfo = '';
-                if (player.currentWord) {
-                    if (id === myPlayerId) {
-                        wordInfo = `<span class="player-word">(Twoje hasło)</span>`;
-                    } else {
-                        wordInfo = `<span class="player-word">${player.currentWord.word}</span>`;
-                    }
-                }
-                li.innerHTML = `${player.name} (${player.score} pkt) ${wordInfo}`;
-                sidebarPlayerList.appendChild(li);
             }
         });
 
@@ -460,7 +396,7 @@
             skipBtn.disabled = !isMyTurn;
             if(isMyTurn) guessInput.focus();
 
-            hintBtn.style.display = turnCount >= 15 ? 'inline-block' : 'none';
+            hintBtn.style.display = turnCount >= 10 ? 'inline-block' : 'none';
             hintDisplay.textContent = '';
 
             startTimer(45);
