@@ -61,7 +61,8 @@ io.on('connection', (socket) => {
         name: playerName,
         score: 0,
         currentWord: null,
-        isReady: false
+        isReady: false,
+        hasGuessed: false
       };
       socket.emit('joinedRoom', { success: true, roomId });
       io.to(roomId).emit('updatePlayers', rooms[roomId].players);
@@ -158,9 +159,25 @@ io.on('connection', (socket) => {
 
     if (isCorrect) {
         room.players[guesserId].score++;
+        room.players[guesserId].hasGuessed = true;
+
         io.to(roomId).emit('updatePlayers', room.players);
         io.to(roomId).emit('guessMade', { playerId: guesserId, guess, isCorrect });
-        nextTurn(roomId);
+
+        const allGuessed = Object.values(room.players).every(p => p.hasGuessed);
+        if (allGuessed) {
+            room.gameState = 'finished';
+            if (turnTimers[roomId]) {
+                clearTimeout(turnTimers[roomId]);
+                delete turnTimers[roomId];
+            }
+            io.to(roomId).emit('gameFinished', {
+                reason: 'Wszyscy gracze odgadli swoje hasła!',
+                players: room.players
+            });
+        } else {
+            nextTurn(roomId);
+        }
     } else {
         io.to(roomId).emit('guessMade', { playerId: guesserId, guess, isCorrect });
     }
@@ -175,14 +192,16 @@ io.on('connection', (socket) => {
 
   socket.on('getHint', (roomId) => {
     const room = rooms[roomId];
-    if (!room || room.turnCount < 10) return;
+    // Only the current player can request a hint for their own word.
+    if (!room || room.currentTurn !== socket.id || room.turnCount < 15) return;
 
     const currentPlayerId = room.currentTurn;
     const currentWordObject = room.players[currentPlayerId]?.currentWord;
 
     if (currentWordObject && currentWordObject.hint) {
       const hint = currentWordObject.hint;
-      io.to(roomId).emit('hint', { hint });
+      // Emit the hint only to the player who requested it.
+      socket.emit('hint', { hint });
     }
   });
 
