@@ -36,7 +36,7 @@ module.exports = {
         { word: "Keanu Reeves", hint: "Aktor" },
         { word: "Cersei Lannister", hint: "Uprawiałą seks z bratem" },
         { word: "Serena Williams", hint: "Tenis" },
-        { word: "Ragnar Lothbrok", hint: "Napadł na Anglię i francje" },
+        { word: "Ragnar Lothbrok", hint: "Napadł na Anglię i Francje" },
         { word: "Hulk", hint: "Promieniowanie gamma" },
         { word: "Bill Gates", hint: "Jeden z najbogatszych ludzi na świecie" },
         { word: "Rihanna", hint: "Piosenkarka" },
@@ -73,6 +73,7 @@ module.exports = {
         { word: "Tyrion Lannister", hint: "Pół-czlowiek" },
         { word: "Tony Stark", hint: "Geniusz, miliarder, playboy" },
         { word: "Kapitan Ameryka", hint: "Miał tarcze" },
+        { word: "Wonder Woman", hint: "Superbohaterka" },
         { word: "Joker", hint: "Klaun" },
         { word: "Rick Grimes", hint: "W świecie po apokalipsie prowadzi grupę" },
         { word: "Daryl Dixon", hint: "Kusza i wiatr we włosach" },
@@ -94,7 +95,7 @@ module.exports = {
         { word: "Rick Sanchez", hint: "Nienawidzi swojego zięcia" },
         { word: "Morty Smith", hint: "On i jego dziadek są głównymi postaciami" },
         { word: "Frodo Baggins", hint: "Nosił pierścień." },
-        { word: "Shrek", hint: "Ogr z bagien." }
+        { word: "Shrek", hint: "Ma warstwy jak cebula." }
     ],
     everydayItems: [
         { word: "Krzesło", hint: "Służy do siedzenia." }
@@ -111,10 +112,7 @@ module.exports = {
         { word: "Ciri", hint: "Popielate włosy." },
         { word: "Yennefer", hint: "Czarodziejka" },
         { word: "Big Smoke", hint: "Postać z Grand Theft Auto" },
-        { word: "Master Chief", hint: "Główny bohater serii gier 'Halo'." },
-        { word: "Jinx", hint: "Szalona z Zaun." },
-        { word: "Vi", hint: "Strażniczka z Piltover." },
-        { word: "Ezio Auditore", hint: "Asasyn z Włoch." },
-        { word: "Arthur Morgan", hint: "Kowboj z gangu." }
+        { word: "Jinx", hint: "Wystrzałowa wariatka" },
+        { word: "Vi", hint: "Ma metalowe rękawice." },
     ]
 };
