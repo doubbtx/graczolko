@@ -163,7 +163,13 @@ io.on('connection', (socket) => {
   });
 
   socket.on('skipTurn', (roomId) => {
-    if (rooms[roomId] && rooms[roomId].currentTurn === socket.id) {
+    const room = rooms[roomId];
+    if (room && room.currentTurn === socket.id) {
+        const player = room.players[socket.id];
+        if (player) {
+            player.skipCount++;
+            io.to(roomId).emit('updatePlayers', room.players);
+        }
         io.to(roomId).emit('turnSkipped', { playerId: socket.id });
         nextTurn(roomId);
     }
@@ -171,11 +177,11 @@ io.on('connection', (socket) => {
 
   socket.on('getHint', (roomId) => {
     const room = rooms[roomId];
-    // Only the current player can request a hint for their own word.
-    if (!room || room.currentTurn !== socket.id || room.turnCount < 15) return;
+    const player = room?.players[socket.id];
+    // Only the current player can request a hint for their own word, after 15 skips.
+    if (!room || !player || room.currentTurn !== socket.id || player.skipCount < 15) return;
 
-    const currentPlayerId = room.currentTurn;
-    const currentWordObject = room.players[currentPlayerId]?.currentWord;
+    const currentWordObject = player.currentWord;
 
     if (currentWordObject && currentWordObject.hint) {
       const hint = currentWordObject.hint;
