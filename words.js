@@ -50,7 +50,8 @@ module.exports = {
         { word: "Stephen Hawking", hint: "Fizyk" },
         { word: "Aang", hint: "Władał wszystkimi żwyiołami" },
         { word: "Ahsoka Tano", hint: "Nie Jedi, ale więcej niż uczennica" },
-        { word: "Vladimir Putin", hint: "Zbrodniarz" }
+        { word: "Vladimir Putin", hint: "Zbrodniarz" },
+        { word: "Gordon Ramsay", hint: "" },
     ],
     tvAndMovieCharacters: [
         { word: "Harry Potter", hint: "Blizna" },
@@ -111,9 +112,36 @@ module.exports = {
         { word: "Lord Farquaad", hint: "Ma kompleks wzrostu." },
         { word: "Czkawka", hint: "Przyjaciel smoków." },
         { word: "Robin Hood", hint: "Kradnie bogatym." },
+        { word: "Thomas Shelby", hint: " " },
+        { word: "Arthur Shelby", hint: " " },
+        { word: "John Shelby", hint: " " },
+        { word: "Rhaenyra Targaryen", hint: " " },
+        { word: "Daemon Targaryen", hint: " " },
+        { word: "John Wick", hint: " " },
+
     ],
     everydayItems: [
-        { word: "Krzesło", hint: "Służy do siedzenia." }
+        { word: "Lusterko", hint: "Jeżeli ty się uśmiechasz, to ja też" },
+        { word: "Francja", hint: "Nazywana heksagonem" },
+        { word: "Holandia", hint: "Ma terytoria zamorskie na karaibach" },
+        { word: "Piramida", hint: "Nie ma schodów, ale prowadzi ku górze." },
+        { word: "Tetris", hint: "Gra, gdzie wszystko musi pasować idealnie" },
+        { word: "Cień", hint: "Zawsze za tobą, ale nic nie mówi" },
+        { word: "Amazonka", hint: "Więcej wody niż Nil, ale krótsza" },
+        { word: "Kaktus", hint: "Nie potrzebuje wiele wody" },
+        { word: "Alpaka", hint: "Kuzynka lamy" },
+        { word: "Wenecja", hint: "Miasto bez ulic" },
+        { word: "Grecja", hint: "Ojczyzna mitów" },
+        { word: "Chiny", hint: " " },
+        { word: "Mount Everest", hint: " " },
+        { word: "Leonardo Da Vinci", hint: " " },
+        { word: "Adolf Hitler", hint: " " },
+        { word: "Mao Zedong", hint: " " },
+        { word: "Abraham Lincoln", hint: " " },
+        { word: "Mieszko I", hint: " " },
+        { word: "Jan III Sobieski", hint: " " },
+        { word: "John F. Kennedy", hint: " " },
+        { word: "Królowa Elżbieta", hint: " " },
     ],
     gameItemsAndCharacters: [
         { word: "Mario", hint: "Wąsaty hydraulik" },
@@ -132,5 +160,6 @@ module.exports = {
         { word: "Jayce", hint: "Geniusz, miał młot jako broń." },
         { word: "Ekko", hint: "Cofał czas do 4 sekund." },
         { word: "Heimerdinger", hint: "Geniusz, bardzo niski, żył kilkaset lat." },
+        { word: "Jaskier", hint: "Bard." },
     ]
 };
