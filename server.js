@@ -115,15 +115,18 @@ io.on('connection', (socket) => {
     }
   });
 
-  socket.on('submitCustomWord', ({ roomId, customWord }) => {
+  socket.on('submitCustomWord', ({ roomId, customWord, customHint }) => {
     const room = rooms[roomId];
     if (!room || room.gameState !== 'picking' || !customWord) return;
 
     const pickerId = socket.id;
     const partnerId = room.pairs[pickerId];
 
+    // Use provided hint or a default one
+    const hint = customHint && customHint.trim().length > 0 ? customHint.trim() : 'Słowo niestandardowe';
+
     // Create a word object for the custom word
-    const customWordObject = { word: customWord.trim(), hint: 'Słowo niestandardowe' };
+    const customWordObject = { word: customWord.trim(), hint: hint };
 
     if(customWordObject.word.length > 0) {
         room.players[partnerId].currentWord = customWordObject;

@@ -182,8 +182,8 @@
     <div id="main-container">
         <!-- Home Screen -->
         <div id="home-screen" class="screen active">
-            <h1>Czołko Deluxe</h1>
-            <p style="text-align: center;">Nowoczesna gra w odgadywanie słów na czole!</p>
+            <h1>Czółko</h1>
+            <p style="text-align: center;">Gra w odgadywanie słów!</p>
             <input type="text" id="player-name" placeholder="Wpisz swoje imię">
             <div style="text-align: center;">
                 <button id="create-room-btn">Stwórz Pokój</button>
@@ -213,6 +213,7 @@
                 <hr style="margin: 20px 0; border-color: var(--secondary-color);">
                 <p>Lub wpisz własne słowo:</p>
                 <input type="text" id="custom-word-input" placeholder="Wpisz własne słowo...">
+                <input type="text" id="custom-hint-input" placeholder="Wpisz podpowiedź (opcjonalnie)...">
                 <button id="submit-custom-word-btn">Zatwierdź własne słowo</button>
             </div>
             <p id="waiting-for-others" style="display: none; text-align: center;">Słowo wybrane. Czekamy na resztę graczy...</p>
@@ -405,8 +406,9 @@
 
             document.getElementById('submit-custom-word-btn').onclick = () => {
                 const customWord = document.getElementById('custom-word-input').value.trim();
+                const customHint = document.getElementById('custom-hint-input').value.trim();
                 if (customWord) {
-                    socket.emit('submitCustomWord', { roomId, customWord });
+                    socket.emit('submitCustomWord', { roomId, customWord, customHint });
                     wordChoicesDiv.style.display = 'none';
                     document.getElementById('custom-word-area').style.display = 'none';
                     waitingForOthersP.style.display = 'block';
