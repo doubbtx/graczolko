@@ -273,6 +273,25 @@
         body.dark-mode .theme-toggle-btn .fas {
             color: var(--text-color);
         }
+
+        body.dark-mode input[type="text"],
+        body.dark-mode textarea {
+            background-color: var(--input-bg-color);
+            color: var(--text-color);
+            border-color: var(--border-color);
+        }
+
+        body.dark-mode input::placeholder,
+        body.dark-mode textarea::placeholder {
+            color: var(--text-color-secondary);
+            opacity: 0.8;
+        }
+
+        body.dark-mode #hint-display {
+            background-color: var(--input-bg-color);
+            color: var(--text-color-secondary);
+            border: 1px solid var(--border-color);
+        }
     </style>
 </head>
 <body>
