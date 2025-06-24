@@ -115,6 +115,30 @@ io.on('connection', (socket) => {
     }
   });
 
+  socket.on('submitCustomWord', ({ roomId, customWord }) => {
+    const room = rooms[roomId];
+    if (!room || room.gameState !== 'picking' || !customWord) return;
+
+    const pickerId = socket.id;
+    const partnerId = room.pairs[pickerId];
+
+    // Create a word object for the custom word
+    const customWordObject = { word: customWord.trim(), hint: 'Słowo niestandardowe' };
+
+    if(customWordObject.word.length > 0) {
+        room.players[partnerId].currentWord = customWordObject;
+        room.wordsToSubmit--;
+        socket.emit('wordSubmitted');
+
+        if (room.wordsToSubmit === 0) {
+            room.gameState = 'playing';
+            io.to(roomId).emit('allWordsSubmitted');
+            io.to(roomId).emit('updatePlayers', room.players);
+            nextTurn(roomId);
+        }
+    }
+  });
+
   socket.on('makeGuess', ({ roomId, guess }) => {
     const room = rooms[roomId];
     if (!room || room.currentTurn !== socket.id) return;

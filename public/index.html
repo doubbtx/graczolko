@@ -209,6 +209,12 @@
             <h2>Wybierz słowo dla <span id="partner-name"></span></h2>
             <p style="text-align: center;">Wybierz jedno słowo, które będzie musiał(a) odgadnąć.</p>
             <div id="word-choices"></div>
+            <div id="custom-word-area" style="margin-top: 20px; text-align: center;">
+                <hr style="margin: 20px 0; border-color: var(--secondary-color);">
+                <p>Lub wpisz własne słowo:</p>
+                <input type="text" id="custom-word-input" placeholder="Wpisz własne słowo...">
+                <button id="submit-custom-word-btn">Zatwierdź własne słowo</button>
+            </div>
             <p id="waiting-for-others" style="display: none; text-align: center;">Słowo wybrane. Czekamy na resztę graczy...</p>
         </div>
 
@@ -391,10 +397,23 @@
                 btn.onclick = () => {
                     socket.emit('submitWord', { roomId, word });
                     wordChoicesDiv.style.display = 'none';
+                    document.getElementById('custom-word-area').style.display = 'none';
                     waitingForOthersP.style.display = 'block';
                 };
                 wordChoicesDiv.appendChild(btn);
             });
+
+            document.getElementById('submit-custom-word-btn').onclick = () => {
+                const customWord = document.getElementById('custom-word-input').value.trim();
+                if (customWord) {
+                    socket.emit('submitCustomWord', { roomId, customWord });
+                    wordChoicesDiv.style.display = 'none';
+                    document.getElementById('custom-word-area').style.display = 'none';
+                    waitingForOthersP.style.display = 'block';
+                }
+            };
+
+            document.getElementById('custom-word-area').style.display = 'block';
             switchScreen('picking');
         });
 
