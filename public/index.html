@@ -198,9 +198,85 @@
             height: 120px; /* Made longer */
             resize: vertical; 
         }
+        .theme-toggle-btn {
+            position: absolute;
+            top: 1.5rem;
+            right: 2rem;
+            background: var(--card-bg-color);
+            color: var(--text-color);
+            border: 1px solid var(--border-color);
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 1.1rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            transition: all 0.3s ease;
+            z-index: 1000;
+        }
+        .theme-toggle-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+
+        /* Dark Theme */
+        body.dark-mode {
+            --primary-bg-color: #121212;
+            --card-bg-color: #1e1e1e;
+            --primary-accent-color: #3a6df0;
+            --secondary-accent-color: #bb86fc;
+            --text-color: #e0e0e0;
+            --text-color-secondary: #b0b0b0;
+            --border-color: #333;
+            --button-text-color: #ffffff;
+            --input-bg-color: #2c2c2c;
+        }
+
+        body.dark-mode .card {
+            border: 1px solid var(--border-color);
+        }
+
+        body.dark-mode .button-secondary {
+            background-color: transparent;
+            color: var(--secondary-accent-color);
+            border-color: var(--secondary-accent-color);
+        }
+
+        body.dark-mode .button-secondary:hover {
+            background-color: var(--secondary-accent-color);
+            color: var(--button-text-color);
+        }
+
+        body.dark-mode .theme-toggle-btn {
+            background: var(--card-bg-color);
+            color: var(--text-color);
+            border-color: var(--border-color);
+        }
+
+        body.dark-mode #player-list li {
+            background: transparent;
+            border: none;
+            border-bottom: 1px solid var(--border-color);
+            color: var(--text-color);
+            border-radius: 0;
+            padding: 0.75rem 0.25rem;
+            margin-bottom: 0;
+        }
+
+        body.dark-mode #player-list li:last-child {
+            border-bottom: none;
+        }
+
+        body.dark-mode .theme-toggle-btn .fas {
+            color: var(--text-color);
+        }
     </style>
 </head>
 <body>
+    <button id="theme-toggle" class="theme-toggle-btn"><i class="fas fa-moon"></i></button>
     <header class="app-header">
         <div class="logo">
             <i class="fas fa-brain logo-icon"></i>
@@ -324,6 +400,26 @@
 
     <script src="/socket.io/socket.io.js"></script>
     <script>
+        // --- Theme Switcher Logic ---
+        const themeToggleBtn = document.getElementById('theme-toggle');
+        const body = document.body;
+
+        themeToggleBtn.addEventListener('click', () => {
+            body.classList.toggle('dark-mode');
+            let isDarkMode = body.classList.contains('dark-mode');
+            localStorage.setItem('theme', isDarkMode ? 'dark' : 'light');
+            themeToggleBtn.innerHTML = isDarkMode ? '<i class="fas fa-sun"></i>' : '<i class="fas fa-moon"></i>';
+        });
+
+        // Apply saved theme on initial load
+        document.addEventListener('DOMContentLoaded', () => {
+            const savedTheme = localStorage.getItem('theme');
+            if (savedTheme === 'dark') {
+                body.classList.add('dark-mode');
+                themeToggleBtn.innerHTML = '<i class="fas fa-sun"></i>';
+            }
+        });
+
         const socket = io();
         let roomId = null;
         let myPlayerId = null;
