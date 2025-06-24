@@ -24,6 +24,7 @@ io.on('connection', (socket) => {
   socket.on('createRoom', ({ playerName }) => {
     const roomId = generateRoomId();
     rooms[roomId] = {
+      hostId: socket.id, // Set the creator as the host
       players: {},
       gameState: 'waiting', // waiting, picking, playing, finished
       pairs: {},
@@ -35,6 +36,7 @@ io.on('connection', (socket) => {
     socket.join(roomId);
 
     rooms[roomId].players[socket.id] = {
+      id: socket.id,
       name: playerName,
       score: 0,
       currentWord: null,
@@ -43,8 +45,11 @@ io.on('connection', (socket) => {
       skipCount: 0
     };
 
-    socket.emit('roomCreated', { roomId });
-    io.to(roomId).emit('updatePlayers', rooms[roomId].players);
+    socket.emit('roomCreated', { 
+        roomId, 
+        hostId: rooms[roomId].hostId,
+        players: rooms[roomId].players 
+    });
   });
 
   socket.on('joinRoom', ({ playerName, roomId }) => {
@@ -59,7 +64,9 @@ io.on('connection', (socket) => {
       }
 
       socket.join(roomId);
-      rooms[roomId].players[socket.id] = {
+      const room = rooms[roomId];
+      room.players[socket.id] = {
+        id: socket.id,
         name: playerName,
         score: 0,
         currentWord: null,
@@ -67,8 +74,14 @@ io.on('connection', (socket) => {
         hasGuessed: false,
         skipCount: 0
       };
-      socket.emit('joinedRoom', { success: true, roomId });
-      io.to(roomId).emit('updatePlayers', rooms[roomId].players);
+      socket.emit('joinedRoom', { 
+          success: true, 
+          roomId, 
+          hostId: room.hostId,
+          players: room.players 
+      });
+      // Inform other players about the new joiner
+      io.to(roomId).emit('updatePlayers', room.players);
     } else {
       socket.emit('joinError', { message: 'Pokój nie istnieje.' });
     }
@@ -254,40 +267,28 @@ function startPickingPhase(roomId) {
 
     room.gameState = 'picking';
     room.turnOrder = Object.keys(room.players).sort(() => Math.random() - 0.5);
-    
-    // Create pairs for word picking
-    for (let i = 0; i < room.turnOrder.length; i++) {
-        const pickerId = room.turnOrder[i];
-        const partnerId = room.turnOrder[(i + 1) % room.turnOrder.length];
-        room.pairs[pickerId] = partnerId;
-    }
-
     room.wordsToSubmit = room.turnOrder.length;
+    room.pairs = {}; // Reset pairs
 
-    // Combine all word categories
     const allWords = [
         ...words.polishCelebrities,
         ...words.worldCelebrities,
         ...words.tvAndMovieCharacters,
         ...words.everydayItems,
         ...words.gameItemsAndCharacters
-    ];
+    ].map(w => w.word);
 
-    // Send word choices to each player
-    room.turnOrder.forEach(playerId => {
-        const partnerId = room.pairs[playerId];
-        const partnerName = room.players[partnerId].name;
-        
-        // Get 5 unique random words
-        const shuffled = [...allWords].sort(() => 0.5 - Math.random());
-        const wordChoices = shuffled.slice(0, 5);
-        
-        // We send the full word object to the client now
-        io.to(playerId).emit('pickingStarted', { 
-            partnerName: partnerName,
-            choices: wordChoices.map(w => w.word) // Only send the word string for selection
-        });
-    });
+    const playerIds = room.turnOrder;
+    if (playerIds.length < 2) return; // Can't pick words with less than 2 players
+
+    for (let i = 0; i < playerIds.length; i++) {
+        const giverId = playerIds[i];
+        const receiverId = playerIds[(i + 1) % playerIds.length]; // Next player in a circle
+        room.pairs[giverId] = receiverId;
+
+        const choices = [...allWords].sort(() => 0.5 - Math.random()).slice(0, 6);
+        io.to(giverId).emit('pickingStarted', { partnerName: room.players[receiverId].name, choices: choices });
+    }
 }
 
 function nextTurn(roomId) {

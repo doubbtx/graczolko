@@ -4,345 +4,458 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Czołko Deluxe</title>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
-    <style>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+        <style>
         :root {
-            --primary-color: #6a1b9a;
-            --secondary-color: #ab47bc;
-            --accent-color: #fdd835;
-            --light-color: #f3e5f5;
-            --dark-color: #311b92;
+            --primary-bg-color: #f0f2f5;
+            --card-bg-color: #ffffff;
+            --primary-accent-color: #007bff;
+            --text-color: #333;
+            --secondary-text-color: #6c757d;
+            --card-border-color: #dee2e6;
             --font-family: 'Poppins', sans-serif;
         }
-
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        
         body {
             font-family: var(--font-family);
-            background: linear-gradient(135deg, var(--primary-color), var(--dark-color));
-            color: var(--light-color);
-            margin: 0;
-            padding: 20px;
+            background-color: var(--primary-bg-color);
+            color: var(--text-color);
             display: flex;
+            flex-direction: column;
             justify-content: center;
-            align-items: flex-start;
+            align-items: center;
             min-height: 100vh;
+            padding: 2rem;
+            font-size: 14px;
+            position: relative; /* For absolute header positioning */
         }
 
-        #player-sidebar {
-            width: 250px;
-            margin-right: 20px;
-            padding: 20px;
-            background: rgba(0, 0, 0, 0.3);
-            border-radius: 15px;
-            color: #fff;
-            height: calc(100vh - 40px);
-            overflow-y: auto;
-            flex-shrink: 0;
+        .app-header {
+            position: absolute;
+            top: 2rem;
+            left: 2rem;
         }
 
-        #player-sidebar h3 {
-            margin-top: 0;
-            border-bottom: 1px solid #fff;
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
         }
 
-        #main-container {
-            background-color: rgba(255, 255, 255, 0.1);
-            padding: 30px;
-            border-radius: 15px;
-            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
-            backdrop-filter: blur(4px);
-            -webkit-backdrop-filter: blur(4px);
-            border: 1px solid rgba(255, 255, 255, 0.18);
-            max-width: 600px;
-            width: 100%;
+        .logo-icon {
+            font-size: 2rem;
+            color: var(--primary-accent-color);
         }
 
-        h1, h2 {
-            color: var(--accent-color);
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        .logo-text h1 {
+            font-size: 1.5rem;
+            margin: 0;
+            font-weight: 600;
+        }
+
+        .logo-text span {
+            font-size: 0.9rem;
+            color: var(--secondary-text-color);
+        }
+
+        #room-info {
             text-align: center;
+            margin-bottom: 1rem;
+            font-weight: 500;
+            font-size: 1.1rem;
         }
 
-        .screen {
-            display: none;
+        .container { 
+            width: 100%; 
+            max-width: 960px; 
+            margin: 0 auto; /* Center the main container */
+        }
+        .screen { display: none; width: 100%; }
+        .screen.active { display: block; }
+
+        .card {
+            background-color: var(--card-bg-color);
+            border: 1px solid var(--card-border-color);
+            border-radius: 4px;
+            padding: 1.5rem; /* Made longer */
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
         }
 
-        .screen.active {
-            display: block;
-        }
-
-        input[type="text"] {
-            width: calc(100% - 22px);
-            padding: 10px;
-            margin: 10px 0;
-            border-radius: 5px;
-            border: 1px solid var(--secondary-color);
-            background-color: var(--light-color);
-            color: var(--dark-color);
+        .button {
             font-family: var(--font-family);
-        }
-
-        button {
-            background-color: var(--accent-color);
-            color: var(--dark-color);
-            border: none;
-            padding: 12px 25px;
-            border-radius: 25px;
-            font-weight: bold;
+            font-weight: 500;
+            font-size: 14px;
+            padding: 8px 12px;
+            border-radius: 4px;
+            border: 1px solid transparent;
             cursor: pointer;
-            transition: transform 0.2s, background-color 0.2s;
-            margin: 5px;
-            font-family: var(--font-family);
+            transition: background-color 0.2s ease;
         }
-
-        button:hover {
-            transform: scale(1.05);
-            background-color: #ffeb3b;
-        }
-        
-        button:disabled {
-            background-color: #9e9e9e;
-            cursor: not-allowed;
-            transform: none;
-        }
-
-        #player-list {
-            list-style: none;
-            padding: 0;
-            margin-top: 20px;
-        }
-
-        #player-list li {
-            background-color: rgba(0,0,0,0.2);
-            padding: 10px;
-            margin-bottom: 5px;
-            border-radius: 5px;
-        }
-        
-        .word-choice-btn {
-            width: 100%;
-            margin-bottom: 10px;
-            background-color: var(--secondary-color);
+        .button-primary {
+            background-color: var(--primary-accent-color);
             color: white;
+            border-color: var(--primary-accent-color);
+        }
+        .button-primary:hover { background-color: #0069d9; }
+        .button-secondary {
+            background-color: transparent;
+            color: var(--primary-accent-color);
+            border: 1px solid var(--primary-accent-color);
+            font-weight: 600;
+        }
+        .button-secondary:hover { background-color: rgba(0, 123, 255, 0.05); }
+        .button:disabled { 
+            background-color: #e9ecef; 
+            color: #6c757d; 
+            border-color: #ced4da; 
+            cursor: not-allowed; 
         }
 
-        .word-choice-btn:hover {
-            background-color: var(--primary-color);
-        }
-        
-        #timer {
-            font-size: 2em;
-            font-weight: bold;
-            color: var(--accent-color);
-            margin: 15px 0;
-            text-align: center;
-        }
-
-        #current-word-display {
-            font-size: 1.5em;
-            font-weight: bold;
-            margin: 15px 0;
-            min-height: 30px;
-            text-align: center;
-        }
-        
-        #hint-display {
-            margin-top: 15px;
-            padding: 10px;
-            background-color: rgba(0,0,0,0.3);
-            border-radius: 5px;
-            min-height: 20px;
-            font-style: italic;
-            text-align: center;
-        }
-
-        .notes-section, .controls-section {
-            margin-top: 20px;
-            text-align: center;
-        }
-
-        .notes-section textarea {
-            width: calc(100% - 22px);
-            height: 80px;
-            padding: 10px;
-            border-radius: 5px;
-            border: 1px solid var(--secondary-color);
-            background-color: var(--light-color);
-            color: var(--dark-color);
+        input[type="text"], textarea {
             font-family: var(--font-family);
-            resize: vertical;
+            font-size: 14px;
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid var(--card-border-color);
+            border-radius: 4px;
+        }
+        input[type="text"]:focus, textarea:focus {
+            outline: none;
+            border-color: var(--primary-accent-color);
+            box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.2);
+        }
+
+        .centered-layout { max-width: 400px; margin: 0 auto; text-align: center; }
+        .centered-layout h2 { font-size: 1.25rem; margin-bottom: 0.75rem; }
+        .centered-layout p { color: var(--secondary-text-color); margin-bottom: 1rem; font-size: 0.9rem; }
+        .form-group { margin-bottom: 1rem; }
+
+        .divider { text-align: center; border-top: 1px solid var(--card-border-color); line-height: 0.1em; margin: 1.5rem 0; }
+        .divider span { background: var(--card-bg-color); padding: 0 10px; }
+
+        #player-list { list-style: none; text-align: left; padding: 0; }
+        #player-list li { background-color: #f8f9fa; padding: 8px 12px; border-radius: 4px; margin-bottom: 0.5rem; }
+        #player-list li.is-host::after { content: '👑'; margin-left: 0.5rem; }
+
+        .game-layout { display: flex; gap: 1rem; align-items: flex-start; }
+        .main-content { flex-grow: 1; }
+        .sidebar { width: 250px; flex-shrink: 0; }
+        .sidebar .card { margin-bottom: 1rem; }
+        .sidebar h3 { font-size: 1rem; margin-bottom: 0.75rem; }
+        .sidebar ul { list-style: none; padding: 0; }
+
+        .sidebar li {
+            display: flex;
+            flex-direction: column;
+            padding: 0.5rem 0;
+            border-bottom: 1px solid var(--card-border-color);
+        }
+        .sidebar li:last-child { border-bottom: none; }
+
+        .sidebar .player-info {
+            display: flex;
+            justify-content: space-between;
+            font-weight: 500;
+        }
+
+        .sidebar .player-word {
+            font-size: 0.8rem;
+            color: var(--secondary-text-color);
+            margin-top: 3px;
+            font-style: italic;
+        }
+
+        .word-choices-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+        .word-choice-btn { width: 100%; }
+
+        #timer { font-size: 1.75rem; font-weight: 600; text-align: center; margin: 0.75rem 0; color: var(--primary-accent-color); }
+        #current-word-display { font-size: 1.1rem; text-align: center; margin-bottom: 1rem; min-height: 1.5rem; }
+        #hint-display { background-color: #f8f9fa; padding: 0.75rem; border-radius: 4px; margin-top: 1rem; text-align: center; font-style: italic; }
+
+        .controls-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+        .controls-section input {
+            max-width: 400px;
+        }
+        .controls-section .button-group {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        textarea#personal-notes { 
+            height: 120px; /* Made longer */
+            resize: vertical; 
         }
     </style>
 </head>
 <body>
-    <div id="player-sidebar" style="display: none;">
-        <h3>Gracze</h3>
-        <div id="player-list-sidebar"></div>
+    <header class="app-header">
+        <div class="logo">
+            <i class="fas fa-brain logo-icon"></i>
+            <div class="logo-text">
+                <h1>Czółko</h1>
+                <span>Nowoczesna gra słowna</span>
+            </div>
+        </div>
+    </header>
+
+    <div id="room-info" style="display: none;">
+        <strong>Kod pokoju:</strong> <span id="room-id-display"></span>
     </div>
 
-    <div id="main-container">
+    <main class="container">
         <!-- Home Screen -->
         <div id="home-screen" class="screen active">
-            <h1>Czółko</h1>
-            <p style="text-align: center;">Gra w odgadywanie słów!</p>
-            <input type="text" id="player-name" placeholder="Wpisz swoje imię">
-            <div style="text-align: center;">
-                <button id="create-room-btn">Stwórz Pokój</button>
-                <hr style="margin: 20px 0; border-color: var(--secondary-color);">
-                <input type="text" id="room-id-input" placeholder="Wpisz kod pokoju">
-                <button id="join-room-btn">Dołącz do Pokoju</button>
+            <div class="centered-layout">
+                <div class="card">
+                    <h2>Witaj w Czółko!</h2>
+                    <p>Dołącz do gry lub stwórz nowy pokój, aby rozpocząć zabawę.</p>
+                    <div class="form-group">
+                        <input type="text" id="player-name" placeholder="Wpisz swoje imię">
+                    </div>
+                    <div class="form-group">
+                        <button id="create-room-btn" class="button button-primary" style="width: 100%;">Stwórz nowy pokój</button>
+                    </div>
+                    <div class="divider"><span>LUB</span></div>
+                    <div class="form-group">
+                        <input type="text" id="room-id-input" placeholder="Wpisz kod pokoju">
+                    </div>
+                    <button id="join-room-btn" class="button button-secondary" style="width: 100%;">Dołącz do pokoju</button>
+                </div>
             </div>
         </div>
 
         <!-- Lobby Screen -->
         <div id="lobby-screen" class="screen">
-            <h2>Lobby</h2>
-            <p style="text-align: center;">Kod pokoju: <strong id="room-id-display"></strong></p>
-            <h3>Gracze:</h3>
-            <ul id="player-list"></ul>
-            <div style="text-align: center;">
-                 <button id="start-game-btn">Start</button>
+            <div class="centered-layout">
+                <div class="card">
+                    <h2>Lobby</h2>
+                    <p>Poczekaj na resztę graczy. Gospodarz rozpocznie grę.</p>
+                    <ul id="player-list"></ul>
+                    <button id="start-game-btn" class="button button-primary" style="width: 100%; margin-top: 1rem;">Rozpocznij Grę</button>
+                </div>
             </div>
         </div>
 
         <!-- Word Picking Screen -->
         <div id="picking-screen" class="screen">
-            <h2>Wybierz słowo dla <span id="partner-name"></span></h2>
-            <p style="text-align: center;">Wybierz jedno słowo, które będzie musiał(a) odgadnąć.</p>
-            <div id="word-choices"></div>
-            <div id="custom-word-area" style="margin-top: 20px; text-align: center;">
-                <hr style="margin: 20px 0; border-color: var(--secondary-color);">
-                <p>Lub wpisz własne słowo:</p>
-                <input type="text" id="custom-word-input" placeholder="Wpisz własne słowo...">
-                <input type="text" id="custom-hint-input" placeholder="Wpisz podpowiedź (opcjonalnie)...">
-                <button id="submit-custom-word-btn">Zatwierdź własne słowo</button>
+            <div class="game-layout">
+                <div class="main-content">
+                    <div class="card">
+                        <h2>Wybierz słowo dla <span id="partner-name"></span></h2>
+                        <p>Wybierz jedno słowo z listy lub wpisz własne poniżej.</p>
+                        <div id="word-choices" class="word-choices-grid"></div>
+                        <div class="divider"><span>LUB</span></div>
+                        <div id="custom-word-area">
+                            <div class="form-group">
+                                <input type="text" id="custom-word-input" placeholder="Wpisz własne słowo...">
+                            </div>
+                            <div class="form-group">
+                                <input type="text" id="custom-hint-input" placeholder="Wpisz podpowiedź (opcjonalnie)...">
+                            </div>
+                            <button id="submit-custom-word-btn" class="button button-secondary" style="width: 100%;">Zatwierdź własne słowo</button>
+                        </div>
+                        <p id="waiting-for-others" style="display: none; margin-top: 1rem;">Słowo wybrane. Czekamy na resztę graczy...</p>
+                    </div>
+                </div>
+                <aside class="sidebar">
+                    <div class="card">
+                        <h3>Gracze w pokoju</h3>
+                        <ul id="player-list-sidebar"></ul>
+                    </div>
+                </aside>
             </div>
-            <p id="waiting-for-others" style="display: none; text-align: center;">Słowo wybrane. Czekamy na resztę graczy...</p>
         </div>
 
         <!-- Game Screen -->
         <div id="game-screen" class="screen">
-            <h2 id="turn-info"></h2>
-            <div id="timer">00:45</div>
-            <div id="current-word-display">Twoje słowo: ???</div>
-            
-            <div class="controls-section">
-                <input type="text" id="guess-input" placeholder="Zgadnij swoje słowo">
-                <button id="guess-btn">Zgadnij</button>
-                <button id="skip-btn">Pomiń</button>
-                <button id="hint-btn" style="display: none;">Podpowiedź</button>
-            </div>
-            
-            <div id="hint-display"></div>
-
-            <div class="notes-section">
-                <label for="personal-notes">Twoje Notatki (widoczne tylko dla Ciebie)</label>
-                <textarea id="personal-notes"></textarea>
+            <div class="game-layout">
+                <div class="main-content">
+                    <div class="card">
+                        <h2 id="turn-info">Tura gracza...</h2>
+                        <div id="timer">00:45</div>
+                        <div id="current-word-display">Twoje słowo: ???</div>
+                        <div id="hint-display" style="display:none;"></div>
+                        <div class="controls-section">
+                            <input type="text" id="guess-input" placeholder="Zgadnij swoje słowo...">
+                            <div class="button-group">
+                                <button id="guess-btn" class="button button-primary">Zgadnij</button>
+                                <button id="skip-btn" class="button button-secondary">Pomiń</button>
+                                <button id="hint-btn" class="button button-secondary" style="display: none;">Podpowiedź</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <aside class="sidebar">
+                    <div class="card">
+                        <h3>Gracze i punkty</h3>
+                        <ul id="player-list-game"></ul>
+                    </div>
+                    <div class="card">
+                        <h3>Twoje notatki</h3>
+                        <textarea id="personal-notes" placeholder="Notuj tutaj..."></textarea>
+                    </div>
+                </aside>
             </div>
         </div>
         
         <!-- Round Over Screen -->
         <div id="round-over-screen" class="screen">
-             <h2>Koniec rundy!</h2>
-             <p style="text-align: center;">Następna runda rozpocznie się za chwilę...</p>
+            <div class="centered-layout">
+                <div class="card">
+                    <h2>Koniec rundy!</h2>
+                    <p>Następna runda rozpocznie się za chwilę...</p>
+                </div>
+            </div>
         </div>
-
-    </div>
+    </main>
 
     <script src="/socket.io/socket.io.js"></script>
     <script>
         const socket = io();
         let roomId = null;
         let myPlayerId = null;
-        let turnTimerInterval = null;
         let players = {};
-        let gameState = 'waiting';
-        let currentTurn = null;
+        let hostId = null;
+        let turnTimerInterval = null;
 
-        // Screen elements
+        // --- DOM Elements ---
         const screens = {
             home: document.getElementById('home-screen'),
             lobby: document.getElementById('lobby-screen'),
             picking: document.getElementById('picking-screen'),
             game: document.getElementById('game-screen'),
-            roundOver: document.getElementById('round-over-screen')
+            roundOver: document.getElementById('round-over-screen'),
         };
-        const mainContainer = document.getElementById('main-container');
-        const playerSidebar = document.getElementById('player-sidebar');
 
-        // UI elements
+        // Home & Lobby
         const playerNameInput = document.getElementById('player-name');
         const createRoomBtn = document.getElementById('create-room-btn');
         const joinRoomBtn = document.getElementById('join-room-btn');
         const roomIdInput = document.getElementById('room-id-input');
+        const roomInfoDiv = document.getElementById('room-info');
         const roomIdDisplay = document.getElementById('room-id-display');
         const playerListLobby = document.getElementById('player-list');
-        const playerListSidebarDiv = document.getElementById('player-list-sidebar');
         const startGameBtn = document.getElementById('start-game-btn');
+
+        // Picking Screen
         const partnerNameSpan = document.getElementById('partner-name');
         const wordChoicesDiv = document.getElementById('word-choices');
+        const customWordInput = document.getElementById('custom-word-input');
+        const customHintInput = document.getElementById('custom-hint-input');
+        const submitCustomWordBtn = document.getElementById('submit-custom-word-btn');
         const waitingForOthersP = document.getElementById('waiting-for-others');
+        const playerListSidebar = document.getElementById('player-list-sidebar');
+
+        // Game Screen
         const turnInfoH2 = document.getElementById('turn-info');
         const timerDisplay = document.getElementById('timer');
         const currentWordDisplay = document.getElementById('current-word-display');
+        const hintDisplay = document.getElementById('hint-display');
         const guessInput = document.getElementById('guess-input');
         const guessBtn = document.getElementById('guess-btn');
         const skipBtn = document.getElementById('skip-btn');
         const hintBtn = document.getElementById('hint-btn');
-        const hintDisplay = document.getElementById('hint-display');
+        const playerListGame = document.getElementById('player-list-game');
 
+        // --- Utility Functions ---
         function switchScreen(screenName) {
-            Object.values(screens).forEach(s => s.classList.remove('active'));
-            if (screens[screenName]) {
-                screens[screenName].classList.add('active');
-            }
+            Object.values(screens).forEach((s) => s.classList.remove('active'));
+            if (screens[screenName]) screens[screenName].classList.add('active');
         }
 
         function updatePlayerLists() {
+            // Update lobby list
             playerListLobby.innerHTML = '';
-            playerListSidebarDiv.innerHTML = '';
+            Object.values(players).forEach(player => {
+                const li = document.createElement('li');
+                li.textContent = player.name;
+                if (player.id === myPlayerId) li.style.fontWeight = 'bold';
+                if (player.id === hostId) li.classList.add('is-host');
+                playerListLobby.appendChild(li);
+            });
 
+            // Show/hide start button
+            startGameBtn.style.display = (myPlayerId === hostId && Object.keys(players).length >= 2) ? 'block' : 'none';
+
+            // Update sidebars
             const sortedPlayers = Object.values(players).sort((a, b) => b.score - a.score);
+            playerListSidebar.innerHTML = '';
+            playerListGame.innerHTML = '';
 
             sortedPlayers.forEach(player => {
-                const id = Object.keys(players).find(key => players[key] === player);
+                // Picking sidebar (just name)
+                const liSidebar = document.createElement('li');
+                liSidebar.textContent = player.name;
+                playerListSidebar.appendChild(liSidebar);
 
-                // Update lobby list
-                const lobbyLi = document.createElement('li');
-                lobbyLi.textContent = `${player.name} - ${player.score} pkt.`;
-                if (id === myPlayerId) {
-                    lobbyLi.style.fontWeight = 'bold';
-                }
-                playerListLobby.appendChild(lobbyLi);
+                // Game sidebar (name, score, word)
+                const liGame = document.createElement('li');
+                
+                const playerInfoDiv = document.createElement('div');
+                playerInfoDiv.className = 'player-info';
+                playerInfoDiv.innerHTML = `<span>${player.name} ${player.hasGuessed ? '✅' : ''}</span><strong>${player.score}</strong>`;
+                liGame.appendChild(playerInfoDiv);
 
-                // Update sidebar list
-                const sidebarItem = document.createElement('div');
-                sidebarItem.classList.add('player-item');
-                let wordDisplay = '';
-                if (gameState === 'playing' && player.currentWord) {
-                    wordDisplay = (id === myPlayerId) ? 
-                        `<div class="word">Słowo: ???</div>` : 
-                        `<div class="word">Słowo: ${player.currentWord.word}</div>`;
+                // Add the word, but hide it for the current player
+                if (player.currentWord) {
+                    const playerWordDiv = document.createElement('div');
+                    playerWordDiv.className = 'player-word';
+                    if (player.id === myPlayerId) {
+                        playerWordDiv.textContent = `(Twoje słowo)`;
+                    } else {
+                        playerWordDiv.textContent = `Słowo: ${player.currentWord.word}`;
+                    }
+                    liGame.appendChild(playerWordDiv);
                 }
-                sidebarItem.innerHTML = `<strong>${player.name}: ${player.score}</strong> ${player.hasGuessed ? '✅' : ''}${wordDisplay}`;
-                playerListSidebarDiv.appendChild(sidebarItem);
+                
+                playerListGame.appendChild(liGame);
             });
         }
 
-        // Event Listeners
+        function startTimer(duration) {
+            if (turnTimerInterval) clearInterval(turnTimerInterval);
+            let timer = duration;
+            const update = () => {
+                timerDisplay.textContent = `00:${timer < 10 ? '0' : ''}${timer}`;
+            };
+            update();
+            turnTimerInterval = setInterval(() => {
+                timer--;
+                if (timer >= 0) {
+                    update();
+                } else {
+                    clearInterval(turnTimerInterval);
+                }
+            }, 1000);
+        }
+
+        // --- Event Listeners ---
         createRoomBtn.addEventListener('click', () => {
             const playerName = playerNameInput.value.trim();
             if (playerName) socket.emit('createRoom', { playerName });
-            else alert('Proszę wpisać imię.');
         });
 
         joinRoomBtn.addEventListener('click', () => {
             const playerName = playerNameInput.value.trim();
             const roomIdToJoin = roomIdInput.value.trim().toUpperCase();
             if (playerName && roomIdToJoin) socket.emit('joinRoom', { playerName, roomId: roomIdToJoin });
-            else alert('Proszę wpisać imię i kod pokoju.');
         });
-        
+
         startGameBtn.addEventListener('click', () => socket.emit('startGame', roomId));
+
         guessBtn.addEventListener('click', () => {
             const guess = guessInput.value.trim();
             if (guess) {
@@ -350,32 +463,46 @@
                 guessInput.value = '';
             }
         });
+
         skipBtn.addEventListener('click', () => socket.emit('skipTurn', roomId));
         hintBtn.addEventListener('click', () => socket.emit('getHint', roomId));
 
-        // Socket.IO Handlers
+        submitCustomWordBtn.addEventListener('click', () => {
+            const customWord = customWordInput.value.trim();
+            const customHint = customHintInput.value.trim();
+            if (customWord) {
+                socket.emit('submitCustomWord', { roomId, customWord, customHint });
+                wordChoicesDiv.style.display = 'none';
+                document.getElementById('custom-word-area').style.display = 'none';
+                waitingForOthersP.style.display = 'block';
+            }
+        });
+
+        // --- Socket Handlers ---
         socket.on('connect', () => { myPlayerId = socket.id; });
 
         socket.on('roomCreated', (data) => {
             roomId = data.roomId;
+            hostId = data.hostId;
+            players = data.players;
             roomIdDisplay.textContent = roomId;
+            roomInfoDiv.style.display = 'block';
+            updatePlayerLists();
             switchScreen('lobby');
         });
 
         socket.on('joinedRoom', (data) => {
             if (data.success) {
                 roomId = data.roomId;
+                hostId = data.hostId;
+                players = data.players;
                 roomIdDisplay.textContent = roomId;
+                roomInfoDiv.style.display = 'block';
+                updatePlayerLists();
                 switchScreen('lobby');
+            } else {
+                alert(data.message);
             }
-        });
-
-        socket.on('joinError', (data) => alert(data.message));
-        socket.on('gameError', (data) => alert(data.message));
-
-        socket.on('hint', ({ hint }) => {
-            hintDisplay.textContent = `Podpowiedź: ${hint}`;
-            hintDisplay.style.display = 'block';
         });
 
         socket.on('updatePlayers', (updatedPlayers) => {
@@ -383,18 +510,24 @@
             updatePlayerLists();
         });
 
+        socket.on('gameError', ({ message }) => alert(message));
+
         socket.on('pickingStarted', ({ partnerName, choices }) => {
-            gameState = 'picking';
-            playerSidebar.style.display = 'block';
+            // Clear inputs from previous round
+            document.getElementById('personal-notes').value = '';
+            document.getElementById('custom-word-input').value = '';
+            document.getElementById('custom-hint-input').value = '';
+
             partnerNameSpan.textContent = partnerName;
             wordChoicesDiv.innerHTML = '';
-            wordChoicesDiv.style.display = 'block';
+            wordChoicesDiv.style.display = 'grid';
+            document.getElementById('custom-word-area').style.display = 'block';
             waitingForOthersP.style.display = 'none';
 
-            choices.forEach(word => {
+            choices.slice(0, 6).forEach(word => {
                 const btn = document.createElement('button');
                 btn.textContent = word;
-                btn.className = 'word-choice-btn';
+                btn.className = 'button button-secondary word-choice-btn';
                 btn.onclick = () => {
                     socket.emit('submitWord', { roomId, word });
                     wordChoicesDiv.style.display = 'none';
@@ -403,75 +536,48 @@
                 };
                 wordChoicesDiv.appendChild(btn);
             });
-
-            document.getElementById('submit-custom-word-btn').onclick = () => {
-                const customWord = document.getElementById('custom-word-input').value.trim();
-                const customHint = document.getElementById('custom-hint-input').value.trim();
-                if (customWord) {
-                    socket.emit('submitCustomWord', { roomId, customWord, customHint });
-                    wordChoicesDiv.style.display = 'none';
-                    document.getElementById('custom-word-area').style.display = 'none';
-                    waitingForOthersP.style.display = 'block';
-                }
-            };
-
-            document.getElementById('custom-word-area').style.display = 'block';
             switchScreen('picking');
         });
 
-        socket.on('allWordsSubmitted', () => {
-            gameState = 'playing';
-            switchScreen('game');
-        });
+        socket.on('allWordsSubmitted', () => switchScreen('game'));
 
-        socket.on('turnChanged', (data) => {
-            currentTurn = data.currentTurn; // Keep track of whose turn it is
-            const isMyTurn = data.currentTurn === myPlayerId;
-            const currentPlayer = players[data.currentTurn];
-            const me = players[myPlayerId];
+        socket.on('turnChanged', ({ currentTurn, turnCount }) => {
+            const turnPlayer = players[currentTurn];
+            if (!turnPlayer) return;
 
-            if (!currentPlayer || !me) return;
+            turnInfoH2.textContent = turnPlayer.id === myPlayerId ? 'Twoja kolej!' : `Tura gracza ${turnPlayer.name}`;
 
-            turnInfoH2.textContent = `Tura gracza: ${currentPlayer.name}`;
-
-            // Display the word for the current player (or hide it if it's me)
-            if (isMyTurn) {
-                currentWordDisplay.textContent = 'Twoje słowo: ???';
-            } else if (currentPlayer.currentWord) {
-                currentWordDisplay.textContent = `Słowo gracza ${currentPlayer.name}: ${currentPlayer.currentWord.word}`;
-            } else {
-                currentWordDisplay.textContent = ''; // Clear if no word
-            }
-
-            // Enable/disable controls
+            const isMyTurn = currentTurn === myPlayerId;
             guessBtn.disabled = !isMyTurn;
-            skipBtn.disabled = !isMyTurn;
             guessInput.disabled = !isMyTurn;
-            if (isMyTurn) {
-                guessInput.focus();
-            }
+            skipBtn.disabled = !isMyTurn;
+            hintBtn.style.display = isMyTurn && players[myPlayerId]?.skipCount >= 12 ? 'block' : 'none';
 
-            // Show hint button if conditions are met
-            if (isMyTurn && me.skipCount >= 12) {
-                hintBtn.style.display = 'inline-block';
-            } else {
-                hintBtn.style.display = 'none';
-            }
+            currentWordDisplay.textContent = isMyTurn ? 'Twoje słowo: ???' : `Słowo gracza ${turnPlayer.name}: ${turnPlayer.currentWord.word}`;
+            if (isMyTurn) guessInput.focus();
             
-            // Reset hint text display
-            hintDisplay.textContent = '';
             hintDisplay.style.display = 'none';
-
             startTimer(45);
         });
 
+        socket.on('turnEnded', ({ playerId }) => {
+            if (playerId === myPlayerId) alert("Czas się skończył!");
+        });
+
+        socket.on('hint', ({ hint }) => {
+            hintDisplay.textContent = `Podpowiedź: ${hint}`;
+            hintDisplay.style.display = 'block';
+        });
+
         socket.on('roundFinished', () => {
-            gameState = 'finished';
             if (turnTimerInterval) clearInterval(turnTimerInterval);
             switchScreen('roundOver');
         });
 
-        socket.on('gameAborted', (reason) => {
+        socket.on('gameAborted', (message) => {
+            alert(message);
+            switchScreen('home');
+            roomInfoDiv.style.display = 'none';
             alert(reason);
             location.reload();
         });
