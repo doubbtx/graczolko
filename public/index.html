@@ -174,6 +174,15 @@
             margin-bottom: 1rem;
         }
         .word-choice-btn { width: 100%; }
+.word-choice-btn.selected {
+    background-color: var(--primary-accent-color);
+    color: white;
+    border-color: var(--primary-accent-color);
+    box-shadow: 0 0 0 4px rgba(0,123,255,0.15), 0 2px 8px rgba(0,0,0,0.10);
+    transform: scale(1.07);
+    z-index: 1;
+    transition: background-color 0.2s, box-shadow 0.2s, transform 0.15s;
+}
 
         #timer { font-size: 1.75rem; font-weight: 600; text-align: center; margin: 0.75rem 0; color: var(--primary-accent-color); }
         #current-word-display { font-size: 1.1rem; text-align: center; margin-bottom: 1rem; min-height: 1.5rem; }
@@ -615,21 +624,24 @@
             }
         }
         readyBtn.addEventListener('click', () => {
-            // If custom word is filled, submit it
-            const customWord = customWordInput.value.trim();
-            const customHint = customHintInput.value.trim();
-            if (customWord) {
-                socket.emit('submitCustomWord', { roomId, customWord, customHint });
-                hasPickedWord = true;
-                lastPickedWord = customWord;
-            }
-            // If a picked word button was clicked previously, hasPickedWord is already set
-            socket.emit('setReady', { roomId });
-            // Show picked word after Ready
-            if (lastPickedWord) {
-                waitingForOthersP.innerHTML = `Jesteś gotowy! Wybrałeś słowo: <b>${lastPickedWord}</b><br>Czekamy na resztę graczy... Możesz cofnąć gotowość.`;
-            }
-        });
+    // If custom word is filled, submit it
+    const customWord = customWordInput.value.trim();
+    const customHint = customHintInput.value.trim();
+    if (customWord) {
+        socket.emit('submitCustomWord', { roomId, customWord, customHint });
+        hasPickedWord = true;
+        lastPickedWord = customWord;
+        // Remove .selected from all word-choice buttons
+        document.querySelectorAll('.word-choice-btn').forEach(b => b.classList.remove('selected'));
+    }
+    // If a picked word button was clicked previously, hasPickedWord is already set
+    socket.emit('setReady', { roomId });
+    // Show picked word after Ready for your pair
+    if (lastPickedWord) {
+        waitingForOthersP.innerHTML = `Jesteś gotowy! Wybrałeś słowo: <b>${lastPickedWord}</b><br>Czekamy na resztę graczy... Możesz cofnąć gotowość.`;
+        waitingForOthersP.style.display = 'block';
+    }
+});
         unreadyBtn.addEventListener('click', () => {
             socket.emit('setUnready', { roomId });
             // Show picking UI again
@@ -725,22 +737,25 @@
             updateReadyButtons();
 
             choices.slice(0, 6).forEach(word => {
-                const btn = document.createElement('button');
-                btn.textContent = word;
-                btn.className = 'button button-secondary word-choice-btn';
-                btn.onclick = () => {
-                    // Clear custom word input if picking from list
-                    customWordInput.value = '';
-                    customHintInput.value = '';
-                    socket.emit('submitWord', { roomId, word });
-                    hasPickedWord = true;
-                    lastPickedWord = word;
-                    updateReadyButtons();
-                    waitingForOthersP.textContent = 'Możesz edytować swój wybór, dopóki wszyscy nie wybiorą.';
-                    waitingForOthersP.style.display = 'block';
-                };
-                wordChoicesDiv.appendChild(btn);
-            });
+    const btn = document.createElement('button');
+    btn.textContent = word;
+    btn.className = 'button button-secondary word-choice-btn';
+    btn.onclick = () => {
+        // Remove .selected from all buttons
+        document.querySelectorAll('.word-choice-btn').forEach(b => b.classList.remove('selected'));
+        btn.classList.add('selected');
+        // Clear custom word input if picking from list
+        customWordInput.value = '';
+        customHintInput.value = '';
+        socket.emit('submitWord', { roomId, word });
+        hasPickedWord = true;
+        lastPickedWord = word;
+        updateReadyButtons();
+        waitingForOthersP.textContent = 'Możesz edytować swój wybór, dopóki wszyscy nie wybiorą.';
+        waitingForOthersP.style.display = 'block';
+    };
+    wordChoicesDiv.appendChild(btn);
+});
             switchScreen('picking');
         });
 
