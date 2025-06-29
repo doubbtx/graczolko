@@ -586,20 +586,15 @@
         let lastPickedWord = '';
 
         function updateReadyButtons() {
-            // Check if a word is picked or custom word is filled
-            const customWord = customWordInput.value.trim();
-            // If a word was picked or custom word is filled, allow Ready
-            hasPickedWord = hasPickedWord || !!customWord;
-            // Show Ready if player has picked a word or filled custom word and is not ready
-            if (hasPickedWord && players[myPlayerId] && !players[myPlayerId].isReady) {
+            // Always show Ready button during picking phase
+            if (players[myPlayerId] && !players[myPlayerId].isReady) {
                 readyBtn.style.display = 'inline-block';
                 unreadyBtn.style.display = 'none';
                 // Show picking UI
                 wordChoicesDiv.style.display = 'grid';
                 document.getElementById('custom-word-area').style.display = 'block';
-                waitingForOthersP.style.display = 'block';
-                waitingForOthersP.textContent = 'Masz wybrane słowo. Kliknij „Gotowy”, gdy jesteś pewny wyboru.';
-            } else if (hasPickedWord && players[myPlayerId] && players[myPlayerId].isReady) {
+                waitingForOthersP.style.display = 'none';
+            } else if (players[myPlayerId] && players[myPlayerId].isReady) {
                 readyBtn.style.display = 'none';
                 unreadyBtn.style.display = 'inline-block';
                 // Hide picking UI, show ready message and Unready button
