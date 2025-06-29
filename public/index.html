@@ -602,11 +602,15 @@
                 // Show picking UI
                 wordChoicesDiv.style.display = 'grid';
                 document.getElementById('custom-word-area').style.display = 'block';
-                waitingForOthersP.style.display = 'none';
+                if (hasPickedWord) {
+                    waitingForOthersP.textContent = 'Możesz edytować swój wybór, dopóki wszyscy nie wybiorą.';
+                    waitingForOthersP.style.display = 'block';
+                } else {
+                    waitingForOthersP.style.display = 'none';
+                }
             } else if (players[myPlayerId] && players[myPlayerId].isReady) {
                 readyBtn.style.display = 'none';
                 unreadyBtn.style.display = 'inline-block';
-                // Hide picking UI, show ready message and Unready button
                 wordChoicesDiv.style.display = 'none';
                 document.getElementById('custom-word-area').style.display = 'none';
                 waitingForOthersP.style.display = 'block';
