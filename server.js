@@ -122,21 +122,9 @@ io.on('connection', (socket) => {
         }
         room.players[partnerId].currentWord = chosenWordObject;
         socket.emit('wordSubmitted');
-
-        if (room.wordsToSubmit === 0) {
-            room.gameState = 'playing';
-            io.to(roomId).emit('allWordsSubmitted');
-            io.to(roomId).emit('updatePlayers', room.players);
-            // Save lastPartnerId for each picker
-            Object.keys(room.pairs).forEach(giverId => {
-                if (room.players[giverId]) {
-                    room.players[giverId].lastPartnerId = room.pairs[giverId];
-                }
-            });
-            // Clean up temp flags
-            Object.values(room.players).forEach(p => { delete p._hasBeenPicked; });
-            nextTurn(roomId);
-        }
+        // Do NOT auto-proceed to game here. Wait for all ready.
+        // Instead, update players for ready check
+        io.to(roomId).emit('updatePlayers', room.players);
     }
   });
 
@@ -161,21 +149,39 @@ io.on('connection', (socket) => {
         }
         room.players[partnerId].currentWord = customWordObject;
         socket.emit('wordSubmitted');
-
-        if (room.wordsToSubmit === 0) {
-            room.gameState = 'playing';
-            io.to(roomId).emit('allWordsSubmitted');
-            io.to(roomId).emit('updatePlayers', room.players);
-            // Save lastPartnerId for each picker
-            Object.keys(room.pairs).forEach(giverId => {
-                if (room.players[giverId]) {
-                    room.players[giverId].lastPartnerId = room.pairs[giverId];
-                }
-            });
-            Object.values(room.players).forEach(p => { delete p._hasBeenPicked; });
-            nextTurn(roomId);
-        }
+        io.to(roomId).emit('updatePlayers', room.players);
     }
+  });
+
+  socket.on('setReady', ({ roomId }) => {
+    const room = rooms[roomId];
+    if (!room || room.gameState !== 'picking') return;
+    if (!room.players[socket.id]) return;
+    room.players[socket.id].isReady = true;
+    io.to(roomId).emit('updatePlayers', room.players);
+    // Only proceed if all players are ready and all words are picked
+    const allReady = Object.values(room.players).every(p => p.isReady && p.currentWord);
+    if (allReady) {
+      room.gameState = 'playing';
+      io.to(roomId).emit('allWordsSubmitted');
+      io.to(roomId).emit('updatePlayers', room.players);
+      // Save lastPartnerId for each picker
+      Object.keys(room.pairs).forEach(giverId => {
+        if (room.players[giverId]) {
+          room.players[giverId].lastPartnerId = room.pairs[giverId];
+        }
+      });
+      Object.values(room.players).forEach(p => { delete p._hasBeenPicked; });
+      nextTurn(roomId);
+    }
+  });
+
+  socket.on('setUnready', ({ roomId }) => {
+    const room = rooms[roomId];
+    if (!room || room.gameState !== 'picking') return;
+    if (!room.players[socket.id]) return;
+    room.players[socket.id].isReady = false;
+    io.to(roomId).emit('updatePlayers', room.players);
   });
 
   socket.on('makeGuess', ({ roomId, guess }) => {
@@ -202,22 +208,21 @@ io.on('connection', (socket) => {
                 delete turnTimers[roomId];
             }
 
-            // Wait 5 seconds before starting the next round
+            // Wait 5 seconds before returning to lobby (waiting)
             setTimeout(() => {
                 room.wordsToSubmit = 0;
                 room.turnCount = 0;
-                room.gameState = 'picking';
+                room.gameState = 'waiting'; // Allow new players to join
                 for (const playerId in room.players) {
                     const player = room.players[playerId];
                     player.hasGuessed = false;
                     player.currentWord = null;
-                    player.skipCount = 0; // Reset skip count for the new round
+                    player.skipCount = 0;
+                    player.isReady = false;
                 }
-                io.to(roomId).emit('updatePlayers', room.players); // Send cleared state to sidebar
-                
-                // Start the next round's picking phase
-                startPickingPhase(roomId);
-            }, 5000); // 5-second delay
+                io.to(roomId).emit('updatePlayers', room.players);
+                io.to(roomId).emit('backToLobby');
+            }, 5000);
 
         } else {
             nextTurn(roomId);
@@ -250,6 +255,15 @@ io.on('connection', (socket) => {
       const hint = currentWordObject.hint;
       socket.emit('hint', { hint }); // Send hint only to the requester
     }
+  });
+
+  socket.on('startAgain', ({ roomId }) => {
+    const room = rooms[roomId];
+    if (!room || room.gameState !== 'waiting') return;
+    // Only host can start again
+    if (room.hostId !== socket.id) return;
+    startPickingPhase(roomId);
+    io.to(roomId).emit('updatePlayers', room.players);
   });
 
   socket.on('disconnect', () => {

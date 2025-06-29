@@ -344,39 +344,44 @@
             <p>Poczekaj na resztę graczy. Gospodarz rozpocznie grę.</p>
             <ul id="player-list"></ul>
             <button id="start-game-btn" class="button button-primary" style="width: 100%; margin-top: 1rem;">Rozpocznij Grę</button>
+            <button id="start-again-btn" class="button button-primary" style="width: 100%; margin-top: 1rem; display:none;">Zacznij od nowa</button>
         </div>
     </div>
 </div>
 
         <!-- Word Picking Screen -->
         <div id="picking-screen" class="screen">
-            <div class="game-layout">
-                <div class="main-content">
-                    <div class="card">
-                        <h2>Wybierz słowo dla <span id="partner-name"></span></h2>
-                        <p>Wybierz jedno słowo z listy lub wpisz własne poniżej.</p>
-                        <div id="word-choices" class="word-choices-grid"></div>
-                        <div class="divider"><span>LUB</span></div>
-                        <div id="custom-word-area">
-                            <div class="form-group">
-                                <input type="text" id="custom-word-input" placeholder="Wpisz własne słowo...">
-                            </div>
-                            <div class="form-group">
-                                <input type="text" id="custom-hint-input" placeholder="Wpisz podpowiedź (opcjonalnie)...">
-                            </div>
-                            <button id="submit-custom-word-btn" class="button button-secondary" style="width: 100%;">Zatwierdź własne słowo</button>
-                        </div>
-                        <p id="waiting-for-others" style="display: none; margin-top: 1rem;">Słowo wybrane. Czekamy na resztę graczy...</p>
+    <div class="game-layout">
+        <div class="main-content">
+            <div class="card">
+                <h2>Wybierz słowo dla <span id="partner-name"></span></h2>
+                <p>Wybierz jedno słowo z listy lub wpisz własne poniżej.</p>
+                <div id="word-choices" class="word-choices-grid"></div>
+                <div class="divider"><span>LUB</span></div>
+                <div id="custom-word-area">
+                    <div class="form-group">
+                        <input type="text" id="custom-word-input" placeholder="Wpisz własne słowo...">
                     </div>
+                    <div class="form-group">
+                        <input type="text" id="custom-hint-input" placeholder="Wpisz podpowiedź (opcjonalnie)...">
+                    </div>
+                    
                 </div>
-                <aside class="sidebar">
-                    <div class="card">
-                        <h3>Gracze w pokoju</h3>
-                        <ul id="player-list-sidebar"></ul>
-                    </div>
-                </aside>
+                <div style="margin-top:1rem;">
+                    <button id="ready-btn" class="button button-primary" style="display:none;width:48%">Gotowy</button>
+                    <button id="unready-btn" class="button button-secondary" style="display:none;width:48%">Cofnij gotowość</button>
+                </div>
+                <p id="waiting-for-others" style="display: none; margin-top: 1rem;">Słowo wybrane. Czekamy na resztę graczy...</p>
             </div>
         </div>
+        <aside class="sidebar">
+            <div class="card">
+                <h3>Gracze w pokoju</h3>
+                <ul id="player-list-sidebar"></ul>
+            </div>
+        </aside>
+    </div>
+</div>
 
         <!-- Game Screen -->
         <div id="game-screen" class="screen">
@@ -516,6 +521,11 @@
 
             // Show/hide start button
             startGameBtn.style.display = (myPlayerId === hostId && Object.keys(players).length >= 2) ? 'block' : 'none';
+            // Show/hide start-again button
+            const lobbyScreen = document.getElementById('lobby-screen');
+            if (lobbyScreen && document.getElementById('start-again-btn')) {
+                document.getElementById('start-again-btn').style.display = (myPlayerId === hostId && lobbyScreen.classList.contains('active') && players[myPlayerId] && players[myPlayerId].score !== undefined && Object.values(players).some(p => p.score > 0)) ? 'block' : 'none';
+            }
 
             // Update sidebars
             const sortedPlayers = Object.values(players).sort((a, b) => b.score - a.score);
@@ -523,9 +533,10 @@
             playerListGame.innerHTML = '';
 
             sortedPlayers.forEach(player => {
-                // Picking sidebar (just name)
+                // Picking sidebar (name + ready status)
                 const liSidebar = document.createElement('li');
-                liSidebar.textContent = player.name;
+                liSidebar.textContent = player.name + (player.isReady ? ' ✅' : '');
+                if (player.id === myPlayerId) liSidebar.style.fontWeight = 'bold';
                 playerListSidebar.appendChild(liSidebar);
 
                 // Game sidebar (name, score, word)
@@ -568,6 +579,68 @@
             }, 1000);
         }
 
+        // --- Ready/Unready Buttons Logic ---
+        const readyBtn = document.getElementById('ready-btn');
+        const unreadyBtn = document.getElementById('unready-btn');
+        let hasPickedWord = false;
+        let lastPickedWord = '';
+
+        function updateReadyButtons() {
+            // Check if a word is picked or custom word is filled
+            const customWord = customWordInput.value.trim();
+            // If a word was picked or custom word is filled, allow Ready
+            hasPickedWord = hasPickedWord || !!customWord;
+            // Show Ready if player has picked a word or filled custom word and is not ready
+            if (hasPickedWord && players[myPlayerId] && !players[myPlayerId].isReady) {
+                readyBtn.style.display = 'inline-block';
+                unreadyBtn.style.display = 'none';
+                // Show picking UI
+                wordChoicesDiv.style.display = 'grid';
+                document.getElementById('custom-word-area').style.display = 'block';
+                waitingForOthersP.style.display = 'block';
+                waitingForOthersP.textContent = 'Masz wybrane słowo. Kliknij „Gotowy”, gdy jesteś pewny wyboru.';
+            } else if (hasPickedWord && players[myPlayerId] && players[myPlayerId].isReady) {
+                readyBtn.style.display = 'none';
+                unreadyBtn.style.display = 'inline-block';
+                // Hide picking UI, show ready message and Unready button
+                wordChoicesDiv.style.display = 'none';
+                document.getElementById('custom-word-area').style.display = 'none';
+                waitingForOthersP.style.display = 'block';
+                if (lastPickedWord) {
+                    waitingForOthersP.innerHTML = `Jesteś gotowy! Wybrałeś słowo: <b>${lastPickedWord}</b><br>Czekamy na resztę graczy... Możesz cofnąć gotowość.`;
+                } else {
+                    waitingForOthersP.textContent = 'Jesteś gotowy! Czekamy na resztę graczy... Możesz cofnąć gotowość.';
+                }
+            } else {
+                readyBtn.style.display = 'none';
+                unreadyBtn.style.display = 'none';
+                wordChoicesDiv.style.display = 'grid';
+                document.getElementById('custom-word-area').style.display = 'block';
+                waitingForOthersP.style.display = 'none';
+            }
+        }
+        readyBtn.addEventListener('click', () => {
+            // If custom word is filled, submit it
+            const customWord = customWordInput.value.trim();
+            const customHint = customHintInput.value.trim();
+            if (customWord) {
+                socket.emit('submitCustomWord', { roomId, customWord, customHint });
+                hasPickedWord = true;
+                lastPickedWord = customWord;
+            }
+            // If a picked word button was clicked previously, hasPickedWord is already set
+            socket.emit('setReady', { roomId });
+            // Show picked word after Ready
+            if (lastPickedWord) {
+                waitingForOthersP.innerHTML = `Jesteś gotowy! Wybrałeś słowo: <b>${lastPickedWord}</b><br>Czekamy na resztę graczy... Możesz cofnąć gotowość.`;
+            }
+        });
+        unreadyBtn.addEventListener('click', () => {
+            socket.emit('setUnready', { roomId });
+            // Show picking UI again
+            updateReadyButtons();
+        });
+
         // --- Event Listeners ---
         createRoomBtn.addEventListener('click', () => {
             const playerName = playerNameInput.value.trim();
@@ -599,16 +672,7 @@
         skipBtn.addEventListener('click', () => socket.emit('skipTurn', roomId));
         hintBtn.addEventListener('click', () => socket.emit('getHint', roomId));
 
-        submitCustomWordBtn.addEventListener('click', () => {
-            const customWord = customWordInput.value.trim();
-            const customHint = customHintInput.value.trim();
-            if (customWord) {
-                socket.emit('submitCustomWord', { roomId, customWord, customHint });
-                // Don't hide the word choices, allow editing until all have picked
-                waitingForOthersP.textContent = 'Możesz edytować swój wybór, dopóki wszyscy nie wybiorą.';
-                waitingForOthersP.style.display = 'block';
-            }
-        });
+
 
         // --- Socket Handlers ---
         socket.on('connect', () => { myPlayerId = socket.id; });
@@ -646,6 +710,7 @@
         socket.on('updatePlayers', (updatedPlayers) => {
             players = updatedPlayers;
             updatePlayerLists();
+            updateReadyButtons();
         });
 
         socket.on('gameError', ({ message }) => alert(message));
@@ -661,14 +726,21 @@
             wordChoicesDiv.style.display = 'grid';
             document.getElementById('custom-word-area').style.display = 'block';
             waitingForOthersP.style.display = 'none';
+            hasPickedWord = false;
+            updateReadyButtons();
 
             choices.slice(0, 6).forEach(word => {
                 const btn = document.createElement('button');
                 btn.textContent = word;
                 btn.className = 'button button-secondary word-choice-btn';
                 btn.onclick = () => {
+                    // Clear custom word input if picking from list
+                    customWordInput.value = '';
+                    customHintInput.value = '';
                     socket.emit('submitWord', { roomId, word });
-                    // Don't hide the word choices, allow editing until all have picked
+                    hasPickedWord = true;
+                    lastPickedWord = word;
+                    updateReadyButtons();
                     waitingForOthersP.textContent = 'Możesz edytować swój wybór, dopóki wszyscy nie wybiorą.';
                     waitingForOthersP.style.display = 'block';
                 };
@@ -677,7 +749,11 @@
             switchScreen('picking');
         });
 
-        socket.on('allWordsSubmitted', () => switchScreen('game'));
+        socket.on('allWordsSubmitted', () => {
+            readyBtn.style.display = 'none';
+            unreadyBtn.style.display = 'none';
+            switchScreen('game');
+        });
 
         socket.on('turnChanged', ({ currentTurn, turnCount }) => {
             const turnPlayer = players[currentTurn];
@@ -710,6 +786,10 @@
         socket.on('roundFinished', () => {
             if (turnTimerInterval) clearInterval(turnTimerInterval);
             switchScreen('roundOver');
+        });
+
+        socket.on('backToLobby', () => {
+            switchScreen('lobby');
         });
 
         socket.on('gameAborted', (message) => {
