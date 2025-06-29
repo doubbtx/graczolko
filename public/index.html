@@ -313,36 +313,40 @@
     <main class="container">
         <!-- Home Screen -->
         <div id="home-screen" class="screen active">
-            <div class="centered-layout">
-                <div class="card">
-                    <h2>Witaj w Czółko!</h2>
-                    <p>Dołącz do gry lub stwórz nowy pokój, aby rozpocząć zabawę.</p>
-                    <div class="form-group">
-                        <input type="text" id="player-name" placeholder="Wpisz swoje imię">
-                    </div>
-                    <div class="form-group">
-                        <button id="create-room-btn" class="button button-primary" style="width: 100%;">Stwórz nowy pokój</button>
-                    </div>
-                    <div class="divider"><span>LUB</span></div>
-                    <div class="form-group">
-                        <input type="text" id="room-id-input" placeholder="Wpisz kod pokoju">
-                    </div>
-                    <button id="join-room-btn" class="button button-secondary" style="width: 100%;">Dołącz do pokoju</button>
-                </div>
+    <div class="centered-layout">
+        <div class="card">
+            <h2>Witaj w Czółko!</h2>
+            <p>Dołącz do gry lub stwórz nowy pokój, aby rozpocząć zabawę.</p>
+            <div class="form-group">
+                <input type="text" id="player-name" placeholder="Wpisz swoje imię">
             </div>
+            <div class="form-group">
+                <button id="create-room-btn" class="button button-primary" style="width: 100%;">Stwórz nowy pokój</button>
+            </div>
+            <div class="divider"><span>LUB</span></div>
+            <div class="form-group">
+                <input type="text" id="room-id-input" placeholder="Wpisz kod pokoju">
+            </div>
+            <button id="join-room-btn" class="button button-secondary" style="width: 100%;">Dołącz do pokoju</button>
         </div>
+    </div>
+</div>
 
         <!-- Lobby Screen -->
         <div id="lobby-screen" class="screen">
-            <div class="centered-layout">
-                <div class="card">
-                    <h2>Lobby</h2>
-                    <p>Poczekaj na resztę graczy. Gospodarz rozpocznie grę.</p>
-                    <ul id="player-list"></ul>
-                    <button id="start-game-btn" class="button button-primary" style="width: 100%; margin-top: 1rem;">Rozpocznij Grę</button>
-                </div>
+    <div class="centered-layout">
+        <div class="card">
+            <div id="room-info" style="display:none; margin-bottom: 1rem;">
+                <div><strong>Kod pokoju:</strong> <span id="room-id-display"></span></div>
+                <div id="room-url-display"></div>
             </div>
+            <h2>Lobby</h2>
+            <p>Poczekaj na resztę graczy. Gospodarz rozpocznie grę.</p>
+            <ul id="player-list"></ul>
+            <button id="start-game-btn" class="button button-primary" style="width: 100%; margin-top: 1rem;">Rozpocznij Grę</button>
         </div>
+    </div>
+</div>
 
         <!-- Word Picking Screen -->
         <div id="picking-screen" class="screen">
@@ -437,6 +441,13 @@
                 body.classList.add('dark-mode');
                 themeToggleBtn.innerHTML = '<i class="fas fa-sun"></i>';
             }
+            // Nickname
+            const lastNick = localStorage.getItem('czolko_last_nick');
+            if (lastNick) document.getElementById('player-name').value = lastNick;
+            // Room from URL
+            const params = new URLSearchParams(window.location.search);
+            const roomParam = params.get('room');
+            if (roomParam) document.getElementById('room-id-input').value = roomParam;
         });
 
         const socket = io();
@@ -462,6 +473,7 @@
         const roomIdInput = document.getElementById('room-id-input');
         const roomInfoDiv = document.getElementById('room-info');
         const roomIdDisplay = document.getElementById('room-id-display');
+        const roomUrlDisplay = document.getElementById('room-url-display');
         const playerListLobby = document.getElementById('player-list');
         const startGameBtn = document.getElementById('start-game-btn');
 
@@ -544,29 +556,34 @@
             if (turnTimerInterval) clearInterval(turnTimerInterval);
             let timer = duration;
             const update = () => {
-                timerDisplay.textContent = `00:${timer < 10 ? '0' : ''}${timer}`;
+                const minutes = Math.floor(timer / 60).toString().padStart(2, '0');
+                const seconds = (timer % 60).toString().padStart(2, '0');
+                timerDisplay.textContent = `${minutes}:${seconds}`;
             };
             update();
             turnTimerInterval = setInterval(() => {
                 timer--;
-                if (timer >= 0) {
-                    update();
-                } else {
-                    clearInterval(turnTimerInterval);
-                }
+                update();
+                if (timer <= 0) clearInterval(turnTimerInterval);
             }, 1000);
         }
 
         // --- Event Listeners ---
         createRoomBtn.addEventListener('click', () => {
             const playerName = playerNameInput.value.trim();
-            if (playerName) socket.emit('createRoom', { playerName });
+            if (playerName) {
+                localStorage.setItem('czolko_last_nick', playerName);
+                socket.emit('createRoom', { playerName });
+            }
         });
 
         joinRoomBtn.addEventListener('click', () => {
             const playerName = playerNameInput.value.trim();
             const roomIdToJoin = roomIdInput.value.trim().toUpperCase();
-            if (playerName && roomIdToJoin) socket.emit('joinRoom', { playerName, roomId: roomIdToJoin });
+            if (playerName && roomIdToJoin) {
+                localStorage.setItem('czolko_last_nick', playerName);
+                socket.emit('joinRoom', { playerName, roomId: roomIdToJoin });
+            }
         });
 
         startGameBtn.addEventListener('click', () => socket.emit('startGame', roomId));
@@ -587,8 +604,8 @@
             const customHint = customHintInput.value.trim();
             if (customWord) {
                 socket.emit('submitCustomWord', { roomId, customWord, customHint });
-                wordChoicesDiv.style.display = 'none';
-                document.getElementById('custom-word-area').style.display = 'none';
+                // Don't hide the word choices, allow editing until all have picked
+                waitingForOthersP.textContent = 'Możesz edytować swój wybór, dopóki wszyscy nie wybiorą.';
                 waitingForOthersP.style.display = 'block';
             }
         });
@@ -602,6 +619,9 @@
             players = data.players;
             roomIdDisplay.textContent = roomId;
             roomInfoDiv.style.display = 'block';
+            // Show URL for sharing
+            const url = `${window.location.origin}${window.location.pathname}?room=${roomId}`;
+            roomUrlDisplay.innerHTML = `<strong>Link do pokoju:</strong> <input type='text' value='${url}' readonly style='width:70%'> <button onclick='navigator.clipboard.writeText("${url}")'>Kopiuj</button>`;
             updatePlayerLists();
             switchScreen('lobby');
         });
@@ -613,6 +633,9 @@
                 players = data.players;
                 roomIdDisplay.textContent = roomId;
                 roomInfoDiv.style.display = 'block';
+                // Show URL for sharing
+                const url = `${window.location.origin}${window.location.pathname}?room=${roomId}`;
+                roomUrlDisplay.innerHTML = `<strong>Link do pokoju:</strong> <input type='text' value='${url}' readonly style='width:70%'> <button onclick='navigator.clipboard.writeText("${url}")'>Kopiuj</button>`;
                 updatePlayerLists();
                 switchScreen('lobby');
             } else {
@@ -645,8 +668,8 @@
                 btn.className = 'button button-secondary word-choice-btn';
                 btn.onclick = () => {
                     socket.emit('submitWord', { roomId, word });
-                    wordChoicesDiv.style.display = 'none';
-                    document.getElementById('custom-word-area').style.display = 'none';
+                    // Don't hide the word choices, allow editing until all have picked
+                    waitingForOthersP.textContent = 'Możesz edytować swój wybór, dopóki wszyscy nie wybiorą.';
                     waitingForOthersP.style.display = 'block';
                 };
                 wordChoicesDiv.appendChild(btn);

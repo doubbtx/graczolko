@@ -115,14 +115,26 @@ io.on('connection', (socket) => {
     const chosenWordObject = allWords.find(w => w.word === word);
 
     if (chosenWordObject) {
-        room.players[partnerId].currentWord = chosenWordObject; // Store the full object
-        room.wordsToSubmit--;
+        // Overwrite previous pick, only decrement if first time
+        if (!room.players[partnerId]._hasBeenPicked) {
+            room.wordsToSubmit--;
+            room.players[partnerId]._hasBeenPicked = true;
+        }
+        room.players[partnerId].currentWord = chosenWordObject;
         socket.emit('wordSubmitted');
 
         if (room.wordsToSubmit === 0) {
             room.gameState = 'playing';
             io.to(roomId).emit('allWordsSubmitted');
-            io.to(roomId).emit('updatePlayers', room.players); // Send words to all players
+            io.to(roomId).emit('updatePlayers', room.players);
+            // Save lastPartnerId for each picker
+            Object.keys(room.pairs).forEach(giverId => {
+                if (room.players[giverId]) {
+                    room.players[giverId].lastPartnerId = room.pairs[giverId];
+                }
+            });
+            // Clean up temp flags
+            Object.values(room.players).forEach(p => { delete p._hasBeenPicked; });
             nextTurn(roomId);
         }
     }
@@ -142,14 +154,25 @@ io.on('connection', (socket) => {
     const customWordObject = { word: customWord.trim(), hint: hint };
 
     if(customWordObject.word.length > 0) {
+        // Overwrite previous pick, only decrement if first time
+        if (!room.players[partnerId]._hasBeenPicked) {
+            room.wordsToSubmit--;
+            room.players[partnerId]._hasBeenPicked = true;
+        }
         room.players[partnerId].currentWord = customWordObject;
-        room.wordsToSubmit--;
         socket.emit('wordSubmitted');
 
         if (room.wordsToSubmit === 0) {
             room.gameState = 'playing';
             io.to(roomId).emit('allWordsSubmitted');
             io.to(roomId).emit('updatePlayers', room.players);
+            // Save lastPartnerId for each picker
+            Object.keys(room.pairs).forEach(giverId => {
+                if (room.players[giverId]) {
+                    room.players[giverId].lastPartnerId = room.pairs[giverId];
+                }
+            });
+            Object.values(room.players).forEach(p => { delete p._hasBeenPicked; });
             nextTurn(roomId);
         }
     }
@@ -270,6 +293,43 @@ function startPickingPhase(roomId) {
     room.wordsToSubmit = room.turnOrder.length;
     room.pairs = {}; // Reset pairs
 
+    // Try to assign pairs such that no player gets the same partner as last round
+    const playerIds = room.turnOrder;
+    if (playerIds.length < 2) return; // Can't pick words with less than 2 players
+
+    // Helper to check if a pairing is valid
+    function isValidPairing(order) {
+        for (let i = 0; i < order.length; i++) {
+            const giverId = order[i];
+            const receiverId = order[(i + 1) % order.length];
+            if (room.players[giverId] && room.players[giverId].lastPartnerId === receiverId) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    let attempts = 0;
+    let maxAttempts = 50;
+    let foundValid = false;
+    while (attempts < maxAttempts && !foundValid) {
+        if (isValidPairing(room.turnOrder)) {
+            foundValid = true;
+            break;
+        }
+        // Shuffle and try again
+        room.turnOrder = [...room.turnOrder].sort(() => Math.random() - 0.5);
+        attempts++;
+    }
+    // If can't find a valid pairing, just use whatever
+
+    // Assign pairs
+    for (let i = 0; i < room.turnOrder.length; i++) {
+        const giverId = room.turnOrder[i];
+        const receiverId = room.turnOrder[(i + 1) % room.turnOrder.length];
+        room.pairs[giverId] = receiverId;
+    }
+
     const allWords = [
         ...words.polishCelebrities,
         ...words.worldCelebrities,
@@ -278,14 +338,9 @@ function startPickingPhase(roomId) {
         ...words.gameItemsAndCharacters
     ].map(w => w.word);
 
-    const playerIds = room.turnOrder;
-    if (playerIds.length < 2) return; // Can't pick words with less than 2 players
-
-    for (let i = 0; i < playerIds.length; i++) {
-        const giverId = playerIds[i];
-        const receiverId = playerIds[(i + 1) % playerIds.length]; // Next player in a circle
-        room.pairs[giverId] = receiverId;
-
+    for (let i = 0; i < room.turnOrder.length; i++) {
+        const giverId = room.turnOrder[i];
+        const receiverId = room.pairs[giverId];
         const choices = [...allWords].sort(() => 0.5 - Math.random()).slice(0, 6);
         io.to(giverId).emit('pickingStarted', { partnerName: room.players[receiverId].name, choices: choices });
     }
